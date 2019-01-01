@@ -1,41 +1,53 @@
-import React, { Component } from "react";
+import React, { Component, Fragment } from "react";
 import axios from "axios";
 import csvToJson from "csvtojson";
-import logo from "./logo.svg";
-import "./App.css";
+import { List, Card, Tag } from "antd";
+import "antd/dist/antd.css";
 
-// array:
-// //           0  1  2  3  4
-// const foo = [1, 2, 3, 4, 5]
-// const bar = foo[2] // 3
+const getBallColor = ball => {
+  switch (true) {
+    case ball >= 40:
+      return "#6200EA";
+    case ball >= 30:
+      return "#E53935";
+    case ball >= 20:
+      return "#00E676";
+    case ball >= 10:
+      return "#FF6D00";
+    default:
+      return "#2962FF";
+  }
+};
 
-// const baz  = {
-//   3: 7
-//   1: 6,
-//   2: 2,
-// };
-// const zap = baz.potato // two
+const checkIsPower = title => title.toLowerCase().includes("power");
 
-const getFrequency = (data, column) => {
-  const shell = new Array(40)
+const getFrequencies = (data, column, max) => {
+  const shell = new Array(max)
     .fill(0)
     .reduce((acc, _, index) => ({ ...acc, [`${index + 1}`]: 0 }), {});
 
-  const frequency = data.reduce((acc, row) => {
+  const frequencies = data.reduce((acc, row) => {
     const ball = row[column];
     acc[ball]++;
 
     return acc;
   }, shell);
 
-  return Object.entries(frequency).sort(([, tickA], [, tickB]) =>
-    tickA > tickB ? -1 : 1
-  );
+  return Object.entries(frequencies)
+    .sort(([, frequencyA], [, frequencyB]) =>
+      frequencyA > frequencyB ? -1 : 1
+    )
+    .map(([ball, frequency]) => [+ball, +frequency]);
 };
 
 const sliceSinceDraw = (data, draw) => data.filter(row => +row["Draw"] > draw);
 
 class App extends Component {
+  state = {
+    data: [],
+    currentTag: null
+  };
+
   constructor() {
     super();
     this.getData();
@@ -46,45 +58,75 @@ class App extends Component {
       method: "get",
       url: "/lotto-numbers.csv"
     });
-
     const { data: csv } = response;
-    // console.log(csv);
-
     const json = await csvToJson().fromString(csv);
-    // console.log(json);
+    const slicedData = sliceSinceDraw(json, 1609);
+    // prettier-ignore
+    const data = [
+      {title: 'Position One', frequencies: getFrequencies(slicedData, "1", 40) },
+      {title: 'Position Two', frequencies: getFrequencies(slicedData, "2", 40) },
+      {title: 'Position Three', frequencies: getFrequencies(slicedData, "3", 40) },
+      {title: 'Position Four', frequencies: getFrequencies(slicedData, "4", 40) },
+      {title: 'Position Five', frequencies: getFrequencies(slicedData, "5", 40) },
+      {title: 'Position Six', frequencies: getFrequencies(slicedData, "6", 40) },
+      {title: 'Bonus Ball', frequencies: getFrequencies(slicedData, "Bonus Ball", 40) },
+      {title: 'Power Ball', frequencies: getFrequencies(slicedData, "Power Ball", 10) },
+    ];
 
-    const slicedData = sliceSinceDraw(json, 1756);
-    const frequency = {
-      1: getFrequency(slicedData, "1"),
-      2: getFrequency(slicedData, "2"),
-      3: getFrequency(slicedData, "3"),
-      4: getFrequency(slicedData, "4"),
-      5: getFrequency(slicedData, "5"),
-      6: getFrequency(slicedData, "6"),
-      bonus: getFrequency(slicedData, "Bonus Ball"),
-      power: getFrequency(slicedData, "Power Ball")
-    };
+    console.log(data);
 
-    console.log(frequency);
+    this.setState(prevState => ({
+      ...prevState,
+      data
+    }));
   };
+
+  setCurrentTag = ball =>
+    this.setState(prevState => ({
+      ...prevState,
+      currentTag: prevState.currentTag === ball ? null : ball
+    }));
+
+  checkIsCurrentBall = ball =>
+    this.state.currentTag === ball || this.state.currentTag == null;
 
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
+      <div>
+        <List
+          grid={{
+            gutter: 16,
+            xs: 2,
+            // sm: 2,
+            md: 4,
+            // lg: 4,
+            // xl: 4,
+            xxl: 8
+          }}
+          style={{ padding: "20px" }}
+          dataSource={this.state.data}
+          renderItem={({ title, frequencies }) => (
+            <List.Item>
+              <Card title={title}>
+                {frequencies.map(([ball, frequency]) => (
+                  <div
+                    style={{ opacity: this.checkIsCurrentBall(ball) ? 1 : 0.2 }}
+                  >
+                    <Tag
+                      key={ball}
+                      color={checkIsPower(title) ? "blue" : getBallColor(ball)}
+                      style={{ minWidth: "50px" }}
+                      onClick={() => this.setCurrentTag(ball)}
+                    >
+                      #{ball}
+                    </Tag>
+                    x{frequency}
+                  </div>
+                ))}
+              </Card>
+            </List.Item>
+          )}
+        />
       </div>
     );
   }
