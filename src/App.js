@@ -38,10 +38,40 @@ const getFrequencies = (data, column, max, createColor) => {
     .sort(([, frequencyA], [, frequencyB]) =>
       frequencyA > frequencyB ? -1 : 1
     )
-    .map(([ball, frequency]) => [+ball, +frequency, createColor(+ball)]);
+    .map(([ball, frequency]) => [+ball, frequency, createColor(+ball)]);
 };
 
-const sliceSinceDraw = (data, draw) => data.filter(row => +row["Draw"] > draw);
+const sliceSinceDraw = (data, draw) => data.filter(row => row.drawNum > draw);
+
+const enrichJsonData = json =>
+  json.map(
+    ({
+      1: position1, // : "33"
+      2: position2, // : "15"
+      3: position3, // : "11"
+      4: position4, // : "2"
+      5: position5, // : "35"
+      6: position6, // : "10"
+      ["Bonus Ball"]: bonusBall1, // : "5"
+      ["2nd Bonus Ball"]: bonusBall2, // : ""
+      ["Power Ball"]: powerBall, // : "8"
+      Draw: drawNum, // : "1816"
+      ["Draw Date"]: drawDate // : "Saturday 29 December 2018"
+    }) => ({
+      position1: +position1,
+      position2: +position2,
+      position3: +position3,
+      position4: +position4,
+      position5: +position5,
+      position6: +position6,
+      bonusBall1: +bonusBall1,
+      bonusBall2: +bonusBall2,
+      powerBall: +powerBall,
+      drawNum: +drawNum,
+      drawDate,
+      drawtime: new Date(drawDate).getTime()
+    })
+  );
 
 class App extends Component {
   state = {
@@ -61,17 +91,19 @@ class App extends Component {
     });
     const { data: csv } = response;
     const json = await csvToJson().fromString(csv);
-    const slicedData = sliceSinceDraw(json, 1609);
+    const enrichedJson = enrichJsonData(json);
+    console.log("enrichedJson", enrichedJson);
+    const slicedData = sliceSinceDraw(enrichedJson, 1609);
     // prettier-ignore
     const data = [
-      {title: 'Position One', frequencies: getFrequencies(slicedData, "1", 40, getBallColor) },
-      {title: 'Position Two', frequencies: getFrequencies(slicedData, "2", 40, getBallColor) },
-      {title: 'Position Three', frequencies: getFrequencies(slicedData, "3", 40, getBallColor) },
-      {title: 'Position Four', frequencies: getFrequencies(slicedData, "4", 40, getBallColor) },
-      {title: 'Position Five', frequencies: getFrequencies(slicedData, "5", 40, getBallColor) },
-      {title: 'Position Six', frequencies: getFrequencies(slicedData, "6", 40, getBallColor) },
-      {title: 'Bonus Ball', frequencies: getFrequencies(slicedData, "Bonus Ball", 40, getBallColor) },
-      {title: 'Power Ball', frequencies: getFrequencies(slicedData, "Power Ball", 10, () => 'blue') },
+      {title: 'Position One', frequencies: getFrequencies(slicedData, "position1", 40, getBallColor) },
+      {title: 'Position Two', frequencies: getFrequencies(slicedData, "position2", 40, getBallColor) },
+      {title: 'Position Three', frequencies: getFrequencies(slicedData, "position3", 40, getBallColor) },
+      {title: 'Position Four', frequencies: getFrequencies(slicedData, "position4", 40, getBallColor) },
+      {title: 'Position Five', frequencies: getFrequencies(slicedData, "position5", 40, getBallColor) },
+      {title: 'Position Six', frequencies: getFrequencies(slicedData, "position6", 40, getBallColor) },
+      {title: 'Bonus Ball', frequencies: getFrequencies(slicedData, "bonusBall1", 40, getBallColor) },
+      {title: 'Power Ball', frequencies: getFrequencies(slicedData, "powerBall", 10, () => 'blue') },
     ];
 
     console.log(data);
