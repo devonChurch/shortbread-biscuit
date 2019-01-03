@@ -1,8 +1,11 @@
 import React, { Component, Fragment } from "react";
 import axios from "axios";
 import csvToJson from "csvtojson";
-import { List, Card, Tag } from "antd";
-import "antd/dist/antd.css";
+import { List, Card, Tag, Dropdown, Button, Icon, Menu, Row, Col } from "antd";
+import Ball from "./Ball";
+
+const listFromTo = (from, to) =>
+  new Array(to - from + 1).fill(0).map((_, index) => from + index);
 
 const getBallColor = ball => {
   switch (true) {
@@ -19,9 +22,7 @@ const getBallColor = ball => {
   }
 };
 
-const checkIsPower = title => title.toLowerCase().includes("power");
-
-const getFrequencies = (data, column, max) => {
+const getFrequencies = (data, column, max, createColor) => {
   const shell = new Array(max)
     .fill(0)
     .reduce((acc, _, index) => ({ ...acc, [`${index + 1}`]: 0 }), {});
@@ -37,7 +38,7 @@ const getFrequencies = (data, column, max) => {
     .sort(([, frequencyA], [, frequencyB]) =>
       frequencyA > frequencyB ? -1 : 1
     )
-    .map(([ball, frequency]) => [+ball, +frequency]);
+    .map(([ball, frequency]) => [+ball, +frequency, createColor(+ball)]);
 };
 
 const sliceSinceDraw = (data, draw) => data.filter(row => +row["Draw"] > draw);
@@ -63,14 +64,14 @@ class App extends Component {
     const slicedData = sliceSinceDraw(json, 1609);
     // prettier-ignore
     const data = [
-      {title: 'Position One', frequencies: getFrequencies(slicedData, "1", 40) },
-      {title: 'Position Two', frequencies: getFrequencies(slicedData, "2", 40) },
-      {title: 'Position Three', frequencies: getFrequencies(slicedData, "3", 40) },
-      {title: 'Position Four', frequencies: getFrequencies(slicedData, "4", 40) },
-      {title: 'Position Five', frequencies: getFrequencies(slicedData, "5", 40) },
-      {title: 'Position Six', frequencies: getFrequencies(slicedData, "6", 40) },
-      {title: 'Bonus Ball', frequencies: getFrequencies(slicedData, "Bonus Ball", 40) },
-      {title: 'Power Ball', frequencies: getFrequencies(slicedData, "Power Ball", 10) },
+      {title: 'Position One', frequencies: getFrequencies(slicedData, "1", 40, getBallColor) },
+      {title: 'Position Two', frequencies: getFrequencies(slicedData, "2", 40, getBallColor) },
+      {title: 'Position Three', frequencies: getFrequencies(slicedData, "3", 40, getBallColor) },
+      {title: 'Position Four', frequencies: getFrequencies(slicedData, "4", 40, getBallColor) },
+      {title: 'Position Five', frequencies: getFrequencies(slicedData, "5", 40, getBallColor) },
+      {title: 'Position Six', frequencies: getFrequencies(slicedData, "6", 40, getBallColor) },
+      {title: 'Bonus Ball', frequencies: getFrequencies(slicedData, "Bonus Ball", 40, getBallColor) },
+      {title: 'Power Ball', frequencies: getFrequencies(slicedData, "Power Ball", 10, () => 'blue') },
     ];
 
     console.log(data);
@@ -100,9 +101,76 @@ class App extends Component {
     return isEmpty || isActive;
   };
 
+  createBallMenu = () => {
+    const { currentBalls } = this.state;
+
+    return new Array(40)
+      .fill(0)
+      .map((_, index) => index + 1)
+      .filter(ball => !currentBalls.includes(ball))
+      .map(ball => (
+        <Menu.Item key={ball}>
+          <Icon type="user" />
+          {ball}
+        </Menu.Item>
+      ));
+  };
+
   render() {
     return (
       <div>
+        <div
+          style={{
+            background: "#001529",
+            padding: "20px"
+          }}
+        >
+          <Row type="flex" gutter={16}>
+            <Col
+              // span={16}
+              // xs={16}
+              // sm={12}
+              // md={16}
+              lg={16}
+              // xl={8}
+              xxl={8}
+              // style={{ padding: "10px 0" }}
+            >
+              <Card title="Selection">
+                {[
+                  listFromTo(1, 9),
+                  listFromTo(10, 19),
+                  listFromTo(20, 29),
+                  listFromTo(30, 39),
+                  [40]
+                ].map(balls => (
+                  <div key={balls.join(",")}>
+                    {balls.map(ball => (
+                      <span
+                        key={ball}
+                        style={{
+                          opacity: this.checkIsCurrentBall(ball) ? 1 : 0.2,
+                          marginBottom: "8px",
+                          display: "inline-block"
+                        }}
+                      >
+                        <Ball
+                          style={{
+                            marginBottom: "8px"
+                          }}
+                          ball={ball}
+                          color={getBallColor(ball)}
+                          handleClick={() => this.toggleCurrentBall(ball)}
+                        />
+                      </span>
+                    ))}
+                  </div>
+                ))}
+              </Card>
+            </Col>
+          </Row>
+        </div>
+
         <List
           grid={{
             gutter: 16,
@@ -113,23 +181,21 @@ class App extends Component {
             // xl: 4,
             xxl: 8
           }}
-          style={{ padding: "20px" }}
+          style={{ background: "#f0f2f5", padding: "20px" }}
           dataSource={this.state.data}
           renderItem={({ title, frequencies }) => (
             <List.Item>
               <Card title={title}>
-                {frequencies.map(([ball, frequency]) => (
+                {frequencies.map(([ball, frequency, color]) => (
                   <div
+                    key={ball}
                     style={{ opacity: this.checkIsCurrentBall(ball) ? 1 : 0.2 }}
                   >
-                    <Tag
-                      key={ball}
-                      color={checkIsPower(title) ? "blue" : getBallColor(ball)}
-                      style={{ minWidth: "40px", textAlign: "center" }}
-                      onClick={() => this.toggleCurrentBall(ball)}
-                    >
-                      {ball}
-                    </Tag>
+                    <Ball
+                      ball={ball}
+                      color={color}
+                      handleClick={() => this.toggleCurrentBall(ball)}
+                    />
                     x{frequency}
                   </div>
                 ))}
