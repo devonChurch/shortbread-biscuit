@@ -11,7 +11,7 @@ const getBallColor = ball => {
     case ball >= 30:
       return "#E53935";
     case ball >= 20:
-      return "#00E676";
+      return "#00BFA5";
     case ball >= 10:
       return "#FF6D00";
     default:
@@ -45,7 +45,7 @@ const sliceSinceDraw = (data, draw) => data.filter(row => +row["Draw"] > draw);
 class App extends Component {
   state = {
     data: [],
-    currentTag: null
+    currentBalls: []
   };
 
   constructor() {
@@ -81,14 +81,24 @@ class App extends Component {
     }));
   };
 
-  setCurrentTag = ball =>
-    this.setState(prevState => ({
-      ...prevState,
-      currentTag: prevState.currentTag === ball ? null : ball
-    }));
+  toggleCurrentBall = newBall =>
+    this.setState(prevState => {
+      const { currentBalls: prevBalls } = prevState;
+      const isAlreadyActive = prevBalls.includes(newBall);
+      const currentBalls = isAlreadyActive
+        ? prevBalls.filter(prevBall => prevBall !== newBall)
+        : [...prevBalls, newBall];
 
-  checkIsCurrentBall = ball =>
-    this.state.currentTag === ball || this.state.currentTag == null;
+      return { ...prevState, currentBalls };
+    });
+
+  checkIsCurrentBall = ball => {
+    const { currentBalls } = this.state;
+    const isEmpty = !currentBalls.length;
+    const isActive = currentBalls.includes(ball);
+
+    return isEmpty || isActive;
+  };
 
   render() {
     return (
@@ -115,10 +125,10 @@ class App extends Component {
                     <Tag
                       key={ball}
                       color={checkIsPower(title) ? "blue" : getBallColor(ball)}
-                      style={{ minWidth: "50px" }}
-                      onClick={() => this.setCurrentTag(ball)}
+                      style={{ minWidth: "40px", textAlign: "center" }}
+                      onClick={() => this.toggleCurrentBall(ball)}
                     >
-                      #{ball}
+                      {ball}
                     </Tag>
                     x{frequency}
                   </div>
