@@ -1,7 +1,19 @@
 import React, { Component, Fragment } from "react";
 import axios from "axios";
 import csvToJson from "csvtojson";
-import { List, Card, Tag, Dropdown, Button, Icon, Menu, Row, Col } from "antd";
+import moment from "moment";
+import {
+  List,
+  Card,
+  Tag,
+  Dropdown,
+  Button,
+  DatePicker,
+  Icon,
+  Menu,
+  Row,
+  Col
+} from "antd";
 import Ball from "./Ball";
 
 const listFromTo = (from, to) =>
@@ -41,7 +53,10 @@ const getFrequencies = (data, column, max, createColor) => {
     .map(([ball, frequency]) => [+ball, frequency, createColor(+ball)]);
 };
 
-const sliceSinceDraw = (data, draw) => data.filter(row => row.drawNum > draw);
+// const sliceSinceDraw = (data, draw) => data.filter(row => row.drawNum > draw);
+
+const sliceByTime = (json, fromDate, toDate) =>
+  json.filter(({ drawTime }) => drawTime >= fromDate && drawTime <= toDate);
 
 const enrichJsonData = json =>
   json.map(
@@ -69,14 +84,18 @@ const enrichJsonData = json =>
       powerBall: +powerBall,
       drawNum: +drawNum,
       drawDate,
-      drawtime: new Date(drawDate).getTime()
+      drawTime: new Date(drawDate).getTime()
     })
   );
 
 class App extends Component {
   state = {
     data: [],
-    currentBalls: []
+    currentBalls: [],
+    fromDate: null,
+    toDate: null,
+    jsonAll: [],
+    jsonSlice: []
   };
 
   constructor() {
@@ -93,25 +112,13 @@ class App extends Component {
     const json = await csvToJson().fromString(csv);
     const enrichedJson = enrichJsonData(json);
     console.log("enrichedJson", enrichedJson);
-    const slicedData = sliceSinceDraw(enrichedJson, 1609);
-    // prettier-ignore
-    const data = [
-      {title: 'Position One', frequencies: getFrequencies(slicedData, "position1", 40, getBallColor) },
-      {title: 'Position Two', frequencies: getFrequencies(slicedData, "position2", 40, getBallColor) },
-      {title: 'Position Three', frequencies: getFrequencies(slicedData, "position3", 40, getBallColor) },
-      {title: 'Position Four', frequencies: getFrequencies(slicedData, "position4", 40, getBallColor) },
-      {title: 'Position Five', frequencies: getFrequencies(slicedData, "position5", 40, getBallColor) },
-      {title: 'Position Six', frequencies: getFrequencies(slicedData, "position6", 40, getBallColor) },
-      {title: 'Bonus Ball', frequencies: getFrequencies(slicedData, "bonusBall1", 40, getBallColor) },
-      {title: 'Power Ball', frequencies: getFrequencies(slicedData, "powerBall", 10, () => 'blue') },
-    ];
-
-    console.log(data);
 
     this.setState(prevState => ({
       ...prevState,
-      data
+      jsonAll: enrichedJson
     }));
+
+    this.setToFromDate();
   };
 
   toggleCurrentBall = newBall =>
@@ -148,25 +155,61 @@ class App extends Component {
       ));
   };
 
+  setToFromDate = (_, [fromString, toString] = []) => {
+    console.log("xxxx", moment("5th August 2017", "do MMMM YYYY").valueOf());
+    // debugger;
+    console.log(fromString, toString);
+    const { jsonAll } = this.state;
+    const fromDate = fromString
+      ? moment(fromString, "do MMMM YYYY").valueOf()
+      : jsonAll.slice(-1)[0].drawTime;
+    const toDate = toString
+      ? moment(toString, "do MMMM YYYY").valueOf()
+      : jsonAll[0].drawTime;
+    const jsonSlice = sliceByTime(jsonAll, fromDate, toDate);
+    console.log("jsonSlice", jsonSlice);
+    // prettier-ignore
+    const data = [
+      {title: 'Position One', frequencies: getFrequencies(jsonSlice, "position1", 40, getBallColor) },
+      {title: 'Position Two', frequencies: getFrequencies(jsonSlice, "position2", 40, getBallColor) },
+      {title: 'Position Three', frequencies: getFrequencies(jsonSlice, "position3", 40, getBallColor) },
+      {title: 'Position Four', frequencies: getFrequencies(jsonSlice, "position4", 40, getBallColor) },
+      {title: 'Position Five', frequencies: getFrequencies(jsonSlice, "position5", 40, getBallColor) },
+      {title: 'Position Six', frequencies: getFrequencies(jsonSlice, "position6", 40, getBallColor) },
+      {title: 'Bonus Ball', frequencies: getFrequencies(jsonSlice, "bonusBall1", 40, getBallColor) },
+      {title: 'Power Ball', frequencies: getFrequencies(jsonSlice, "powerBall", 10, () => 'blue') },
+    ];
+
+    this.setState(prevState => ({
+      ...prevState,
+      data,
+      jsonSlice,
+      fromDate,
+      toDate
+    }));
+  };
+
   render() {
+    const { fromDate, toDate, jsonAll, jsonSlice } = this.state;
     return (
       <div>
         <div
           style={{
             background: "#001529",
-            padding: "20px"
+            padding: "8px 16px"
           }}
         >
+          <h1 style={{ color: "white", margin: 0 }}>Lotto Statistics</h1>
           <Row type="flex" gutter={16}>
             <Col
-              // span={16}
-              // xs={16}
+              span={24}
+              xs={24}
               // sm={12}
-              // md={16}
-              lg={16}
+              // md={24}
+              lg={24}
               // xl={8}
               xxl={8}
-              // style={{ padding: "10px 0" }}
+              style={{ margin: "8px 0" }}
             >
               <Card title="Selection">
                 {[
@@ -200,6 +243,37 @@ class App extends Component {
                 ))}
               </Card>
             </Col>
+
+            <Col
+              span={24}
+              xs={24}
+              // sm={12}
+              // md={24}
+              lg={24}
+              // xl={8}
+              xxl={8}
+              style={{ margin: "8px 0" }}
+            >
+              <Card title="Time">
+                {fromDate && toDate && (
+                  <Fragment>
+                    <DatePicker.RangePicker
+                      size="large"
+                      defaultValue={[
+                        moment(new Date(fromDate)),
+                        moment(new Date(toDate))
+                      ]}
+                      format={"do MMMM YYYY"}
+                      onChange={this.setToFromDate}
+                    />
+                    <h3 style={{ margin: "18px 0 0" }}>
+                      Showing <strong>{jsonSlice.length}</strong> from a
+                      possible <strong>{jsonAll.length}</strong> draws
+                    </h3>
+                  </Fragment>
+                )}
+              </Card>
+            </Col>
           </Row>
         </div>
 
@@ -213,24 +287,29 @@ class App extends Component {
             // xl: 4,
             xxl: 8
           }}
-          style={{ background: "#f0f2f5", padding: "20px" }}
+          style={{ background: "#f0f2f5", padding: "16px" }}
           dataSource={this.state.data}
           renderItem={({ title, frequencies }) => (
             <List.Item>
               <Card title={title}>
-                {frequencies.map(([ball, frequency, color]) => (
-                  <div
-                    key={ball}
-                    style={{ opacity: this.checkIsCurrentBall(ball) ? 1 : 0.2 }}
-                  >
-                    <Ball
-                      ball={ball}
-                      color={color}
-                      handleClick={() => this.toggleCurrentBall(ball)}
-                    />
-                    x{frequency}
-                  </div>
-                ))}
+                {frequencies.map(
+                  ([ball, frequency, color]) =>
+                    Boolean(ball) && (
+                      <div
+                        key={ball}
+                        style={{
+                          opacity: this.checkIsCurrentBall(ball) ? 1 : 0.2
+                        }}
+                      >
+                        <Ball
+                          ball={ball}
+                          color={color}
+                          handleClick={() => this.toggleCurrentBall(ball)}
+                        />
+                        x{frequency}
+                      </div>
+                    )
+                )}
               </Card>
             </List.Item>
           )}
