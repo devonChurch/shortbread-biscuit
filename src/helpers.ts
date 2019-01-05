@@ -109,12 +109,12 @@ export const setToFromDate = (
   // prettier-ignore
   const data = [
     {title: 'Most Frequent', frequencies: getFrequencies(jsonSlice, [position1, position1, position2, position3, position4, position5, position6, bonusBall1], 40, getBallColor) },
-    {title: 'Position One', frequencies: getFrequencies(jsonSlice, [position1], 40, getBallColor) },
-    {title: 'Position Two', frequencies: getFrequencies(jsonSlice, [position2], 40, getBallColor) },
-    {title: 'Position Three', frequencies: getFrequencies(jsonSlice, [position3], 40, getBallColor) },
-    {title: 'Position Four', frequencies: getFrequencies(jsonSlice, [position4], 40, getBallColor) },
-    {title: 'Position Five', frequencies: getFrequencies(jsonSlice, [position5], 40, getBallColor) },
-    {title: 'Position Six', frequencies: getFrequencies(jsonSlice, [position6], 40, getBallColor) },
+    {title: 'Ball One', frequencies: getFrequencies(jsonSlice, [position1], 40, getBallColor) },
+    {title: 'Ball Two', frequencies: getFrequencies(jsonSlice, [position2], 40, getBallColor) },
+    {title: 'Ball Three', frequencies: getFrequencies(jsonSlice, [position3], 40, getBallColor) },
+    {title: 'Ball Four', frequencies: getFrequencies(jsonSlice, [position4], 40, getBallColor) },
+    {title: 'Ball Five', frequencies: getFrequencies(jsonSlice, [position5], 40, getBallColor) },
+    {title: 'Ball Six', frequencies: getFrequencies(jsonSlice, [position6], 40, getBallColor) },
     {title: 'Bonus Ball', frequencies: getFrequencies(jsonSlice, [bonusBall1], 40, getBallColor) },
     {title: 'Power Ball', frequencies: getFrequencies(jsonSlice, [powerBall], 10, () => 'blue') },
   ];
