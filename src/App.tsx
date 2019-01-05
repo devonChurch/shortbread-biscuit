@@ -37,7 +37,7 @@ class App extends Component<{}, IAppState> {
   getData = async () => {
     const response = await axios({
       method: "get",
-      url: "/lotto-numbers.csv"
+      url: "lotto-numbers.csv"
     });
     const { data: csv } = response;
     const csvJson = await csvToJson().fromString(csv);
@@ -103,7 +103,7 @@ class App extends Component<{}, IAppState> {
               />
             </Col>
 
-            <Col span={24} xs={24} lg={24} xxl={6} style={{ margin: "8px 0" }}>
+            <Col span={24} xs={24} lg={24} xxl={12} style={{ margin: "8px 0" }}>
               <Time
                 fromDate={fromDate}
                 toDate={toDate}
