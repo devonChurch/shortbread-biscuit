@@ -10,4 +10,4 @@ export const colors = {
   bgLight: "#f0f2f5"
 };
 
-export const dateFormat = "do MMMM YYYY";
+export const dateFormat = "YYYY/MM/DD";
