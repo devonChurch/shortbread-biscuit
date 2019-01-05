@@ -37,3 +37,18 @@ export interface IBallJson {
   drawDate: string;
   drawTime: number;
 }
+
+export enum EBallKeys {
+  position1 = "position1",
+  position2 = "position2",
+  position3 = "position3",
+  position4 = "position4",
+  position5 = "position5",
+  position6 = "position6",
+  bonusBall1 = "bonusBall1",
+  bonusBall2 = "bonusBall2",
+  powerBall = "powerBall",
+  drawNum = "drawNum",
+  drawDate = "drawDate",
+  drawTime = "drawTime"
+}
