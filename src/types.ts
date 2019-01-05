@@ -1,10 +1,12 @@
+export type TFrequency = [
+  number, // Ball.
+  number, // Frequency.
+  string // Color.
+];
+
 export interface IBallData {
   title: string;
-  frequencies: [
-    number, // Ball.
-    number, // Frequency.
-    string
-  ][];
+  frequencies: TFrequency[];
 }
 
 export interface IBallCsv {

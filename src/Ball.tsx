@@ -7,7 +7,7 @@ interface IBall {
   };
   ball: number;
   color: string;
-  handleClick: (ball: number) => any;
+  handleClick: (ball: number) => void;
 }
 
 const Ball: SFC<IBall> = ({ ball, color, handleClick }) => (

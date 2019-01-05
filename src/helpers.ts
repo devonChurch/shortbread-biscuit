@@ -1,4 +1,4 @@
-import { IBallData, IBallCsv, IBallJson } from "./types";
+import { TFrequency, IBallData, IBallCsv, IBallJson } from "./types";
 import { colors } from "./statics";
 
 export const createListFromTo = (from: number, to: number): number[] =>
@@ -19,8 +19,6 @@ export const getBallColor = (ball: number): string => {
   }
 };
 
-type Frequency = [number, number, string];
-
 export const getFrequencies = (
   json: IBallJson[],
   columns: (
@@ -38,7 +36,7 @@ export const getFrequencies = (
     | "drawTime")[],
   max: number,
   createColor: (ball: number) => string
-): Frequency[] => {
+): TFrequency[] => {
   const shell = new Array(max)
     .fill(0)
     .reduce((acc, _, index) => ({ ...acc, [`${index + 1}`]: 0 }), {});
@@ -58,7 +56,7 @@ export const getFrequencies = (
       frequencyA > frequencyB ? -1 : 1
     )
     .map(
-      ([ball, frequency]): Frequency => [+ball, +frequency, createColor(+ball)]
+      ([ball, frequency]): TFrequency => [+ball, +frequency, createColor(+ball)]
     );
 };
 
@@ -98,3 +96,35 @@ export const enrichJsonData = (csvJson: IBallCsv[]): IBallJson[] =>
       drawTime: new Date(drawDate).getTime()
     })
   );
+
+export const setToFromDate = (
+  jsonAll: IBallJson[],
+  fromDate: number,
+  toDate: number
+): {
+  data: IBallData[];
+  jsonSlice: IBallJson[];
+  fromDate: number;
+  toDate: number;
+} => {
+  const jsonSlice = sliceItemsByTime(jsonAll, fromDate, toDate);
+  // prettier-ignore
+  const data = [
+    {title: 'Most Frequent', frequencies: getFrequencies(jsonSlice, ["position1", "position1", "position2", "position3", "position4", "position5", "position6", "bonusBall1"], 40, getBallColor) },
+    {title: 'Position One', frequencies: getFrequencies(jsonSlice, ["position1"], 40, getBallColor) },
+    {title: 'Position Two', frequencies: getFrequencies(jsonSlice, ["position2"], 40, getBallColor) },
+    {title: 'Position Three', frequencies: getFrequencies(jsonSlice, ["position3"], 40, getBallColor) },
+    {title: 'Position Four', frequencies: getFrequencies(jsonSlice, ["position4"], 40, getBallColor) },
+    {title: 'Position Five', frequencies: getFrequencies(jsonSlice, ["position5"], 40, getBallColor) },
+    {title: 'Position Six', frequencies: getFrequencies(jsonSlice, ["position6"], 40, getBallColor) },
+    {title: 'Bonus Ball', frequencies: getFrequencies(jsonSlice, ["bonusBall1"], 40, getBallColor) },
+    {title: 'Power Ball', frequencies: getFrequencies(jsonSlice, ["powerBall"], 10, () => 'blue') },
+  ];
+
+  return {
+    data,
+    jsonSlice,
+    fromDate,
+    toDate
+  };
+};

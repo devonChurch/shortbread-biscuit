@@ -9,3 +9,5 @@ export const colors = {
   bgDark: "#001529",
   bgLight: "#f0f2f5"
 };
+
+export const dateFormat = "do MMMM YYYY";
