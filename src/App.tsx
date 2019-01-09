@@ -3,15 +3,17 @@ import axios from "axios";
 import csvToJson from "csvtojson";
 import moment from "moment";
 import { List, Card, Row, Col } from "antd";
-import { IBallData, IBallJson } from "./types";
+import { IBallData, IBallJson, IComboData } from "./types";
 import { colors, dateFormat } from "./statics";
-import { setToFromDate, enrichJsonData } from "./helpers";
+import { setToFromDate, enrichJsonData, createComboData } from "./helpers";
 import Select from "./Select";
 import Time from "./Time";
 import Statistic from "./Statistic";
+import Combinations from "./Combinations";
 
 interface IAppState {
-  data: IBallData[];
+  ballData: IBallData[];
+  comboData: IComboData[];
   currentBalls: number[];
   fromDate: number; // Milliseconds Date(x).getTime();
   toDate: number; // Milliseconds Date(y).getTime();
@@ -19,9 +21,12 @@ interface IAppState {
   jsonSlice: IBallJson[];
 }
 
-class App extends Component<{}, IAppState> {
+interface IAppProps {}
+
+class App extends Component<IAppProps, IAppState> {
   state: IAppState = {
-    data: [],
+    ballData: [],
+    comboData: [],
     currentBalls: [],
     fromDate: 0,
     toDate: 0,
@@ -30,7 +35,7 @@ class App extends Component<{}, IAppState> {
   };
 
   constructor() {
-    super({});
+    super({} as IAppProps);
     this.getData();
   }
 
@@ -42,14 +47,22 @@ class App extends Component<{}, IAppState> {
     const { data: csv } = response;
     const csvJson = await csvToJson().fromString(csv);
     const enrichedJson = enrichJsonData(csvJson);
+    // console.log(enrichedJson);
     const jsonAll = enrichedJson;
     const fromDate = enrichedJson.slice(-1)[0].drawTime;
     const toDate = enrichedJson[0].drawTime;
+    const { ballData, jsonSlice } = setToFromDate(jsonAll, fromDate, toDate);
+    const comboData = createComboData(jsonSlice);
+    console.log(comboData);
 
     this.setState(prevState => ({
       ...prevState,
       jsonAll,
-      ...setToFromDate(jsonAll, fromDate, toDate)
+      jsonSlice,
+      fromDate,
+      toDate,
+      ballData,
+      comboData
     }));
   };
 
@@ -77,15 +90,28 @@ class App extends Component<{}, IAppState> {
     const { jsonAll } = this.state;
     const fromDate = moment(fromString, dateFormat).valueOf();
     const toDate = moment(toString, dateFormat).valueOf();
+    const { ballData, jsonSlice } = setToFromDate(jsonAll, fromDate, toDate);
+    const comboData = createComboData(jsonSlice);
 
     this.setState(prevState => ({
       ...prevState,
-      ...setToFromDate(jsonAll, fromDate, toDate)
+      jsonSlice,
+      fromDate,
+      toDate,
+      ballData,
+      comboData
     }));
   };
 
   render() {
-    const { fromDate, toDate, jsonAll, jsonSlice } = this.state;
+    const {
+      fromDate,
+      toDate,
+      jsonAll,
+      jsonSlice,
+      ballData,
+      comboData
+    } = this.state;
     return (
       <div>
         <div
@@ -124,7 +150,7 @@ class App extends Component<{}, IAppState> {
               md: 4,
               xxl: 8
             }}
-            dataSource={this.state.data}
+            dataSource={ballData}
             renderItem={({ title, frequencies }: IBallData) => (
               <List.Item>
                 <Statistic
@@ -136,6 +162,13 @@ class App extends Component<{}, IAppState> {
               </List.Item>
             )}
           />
+          {Boolean(comboData.length) && (
+            <Combinations
+              comboData={comboData}
+              handleToggle={this.toggleCurrentBall}
+              checkIsActive={this.checkIsCurrentBall}
+            />
+          )}
         </div>
       </div>
     );

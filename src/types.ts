@@ -1,12 +1,14 @@
-export type TFrequency = [
+export type TBallFrequency = [
   number, // Ball.
+  // Color.
   number, // Frequency.
-  string // Color.
+  string // Ball.
+  // Color.
 ];
 
 export interface IBallData {
   title: string;
-  frequencies: TFrequency[];
+  frequencies: TBallFrequency[];
 }
 
 export interface IBallCsv {
@@ -51,4 +53,9 @@ export enum EBallKeys {
   drawNum = "drawNum",
   drawDate = "drawDate",
   drawTime = "drawTime"
+}
+
+export interface IComboData {
+  balls: number[];
+  frequency: number;
 }
