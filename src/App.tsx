@@ -23,6 +23,17 @@ interface IAppState {
 
 interface IAppProps {}
 
+if (Worker) {
+  const worker = new Worker("worker.js");
+
+  worker.onmessage = function(event) {
+    console.log("back from the worker...", event);
+    console.log(`on message ${event.data}`);
+  };
+
+  worker.postMessage("hello");
+}
+
 class App extends Component<IAppProps, IAppState> {
   state: IAppState = {
     ballData: [],
@@ -52,8 +63,10 @@ class App extends Component<IAppProps, IAppState> {
     const fromDate = enrichedJson.slice(-1)[0].drawTime;
     const toDate = enrichedJson[0].drawTime;
     const { ballData, jsonSlice } = setToFromDate(jsonAll, fromDate, toDate);
-    const comboData = createComboData(jsonSlice);
-    console.log(comboData);
+    // const comboData = createComboData(jsonSlice);
+    // console.log(comboData);
+
+    // myWorker.postMessage([first.value,second.value]);
 
     this.setState(prevState => ({
       ...prevState,
@@ -61,8 +74,8 @@ class App extends Component<IAppProps, IAppState> {
       jsonSlice,
       fromDate,
       toDate,
-      ballData,
-      comboData
+      ballData
+      // comboData
     }));
   };
 
