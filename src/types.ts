@@ -55,7 +55,12 @@ export enum EBallKeys {
   drawTime = "drawTime"
 }
 
-export interface IComboData {
+export interface ICombinations {
   balls: number[];
   frequency: number;
+}
+
+export interface IComboData {
+  title: string;
+  combinations: ICombinations[];
 }

@@ -1,25 +1,24 @@
-import React, { SFC } from "react";
+import React, { SFC, Fragment } from "react";
 import { Card } from "antd";
 import { IComboData } from "./types";
 import Ball from "./Ball";
 
 interface ICombinations {
-  comboData: IComboData[];
+  title: string;
+  combinations: IComboData["combinations"];
   handleToggle: (ball: number) => void;
   checkIsActive: (ball: number) => boolean;
 }
 
 const Combinations: SFC<ICombinations> = ({
-  comboData,
+  title,
+  combinations,
   handleToggle,
   checkIsActive
 }) => (
-  <Card title="Combinations">
-    {comboData.map(({ balls, frequency }) => (
+  <Card title={title}>
+    {combinations.map(({ balls, frequency }) => (
       <div key={balls.join(",")}>
-        <span style={{ display: "inline-block", minWidth: "30px" }}>
-          x{frequency}
-        </span>{" "}
         {balls.map(ball => (
           <span
             key={ball}
@@ -34,6 +33,7 @@ const Combinations: SFC<ICombinations> = ({
             />
           </span>
         ))}
+        x{frequency}
       </div>
     ))}
   </Card>

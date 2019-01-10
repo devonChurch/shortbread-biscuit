@@ -25,14 +25,10 @@ const Select: SFC<ISelect> = ({ handleToggle, checkIsActive }) => (
             key={ball}
             style={{
               opacity: checkIsActive(ball) ? 1 : 0.2,
-              marginBottom: "8px",
               display: "inline-block"
             }}
           >
             <Ball
-              style={{
-                marginBottom: "8px"
-              }}
               ball={ball}
               color={getBallColor(ball)}
               handleClick={() => handleToggle(ball)}

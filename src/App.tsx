@@ -2,17 +2,21 @@ import React, { Component } from "react";
 import axios from "axios";
 import csvToJson from "csvtojson";
 import moment from "moment";
-import { List, Card, Row, Col } from "antd";
+import { Row, Col } from "antd";
 import { IBallData, IBallJson, IComboData } from "./types";
 import { colors, dateFormat } from "./statics";
-import { setToFromDate, enrichJsonData, createComboData } from "./helpers";
+import { setToFromDate, enrichJsonData } from "./helpers";
 import Select from "./Select";
 import Time from "./Time";
 import Statistic from "./Statistic";
 import Combinations from "./Combinations";
+import ContentSpinner from "./ContentSpinner";
 
 interface IAppState {
+  isLoading: boolean;
+  isWorking: boolean;
   ballData: IBallData[];
+  powerData: IBallData[];
   comboData: IComboData[];
   currentBalls: number[];
   fromDate: number; // Milliseconds Date(x).getTime();
@@ -25,7 +29,10 @@ interface IAppProps {}
 
 class App extends Component<IAppProps, IAppState> {
   state: IAppState = {
+    isLoading: true,
+    isWorking: true,
     ballData: [],
+    powerData: [],
     comboData: [],
     currentBalls: [],
     fromDate: 0,
@@ -36,8 +43,8 @@ class App extends Component<IAppProps, IAppState> {
 
   worker: Worker;
 
-  constructor() {
-    super({} as IAppProps);
+  constructor(props: IAppProps) {
+    super(props);
     this.worker = Worker && new Worker("worker.js");
     this.getData();
   }
@@ -48,6 +55,7 @@ class App extends Component<IAppProps, IAppState> {
         console.log("back from the worker...", event);
         this.setState(prevState => ({
           ...prevState,
+          isWorking: false,
           comboData: event.data
         }));
       };
@@ -63,18 +71,25 @@ class App extends Component<IAppProps, IAppState> {
     const csvJson = await csvToJson().fromString(csv);
     const enrichedJson = enrichJsonData(csvJson);
     const jsonAll = enrichedJson;
-    const fromDate = enrichedJson.slice(-1)[0].drawTime;
+    // const fromDate = enrichedJson.slice(-1)[0].drawTime;
+    const fromDate = new Date("01/06/2017").getTime();
     const toDate = enrichedJson[0].drawTime;
-    const { ballData, jsonSlice } = setToFromDate(jsonAll, fromDate, toDate);
+    const { ballData, powerData, jsonSlice } = setToFromDate(
+      jsonAll,
+      fromDate,
+      toDate
+    );
 
     Worker && this.worker.postMessage(jsonSlice);
     this.setState(prevState => ({
       ...prevState,
+      isLoading: false,
       jsonAll,
       jsonSlice,
       fromDate,
       toDate,
-      ballData
+      ballData,
+      powerData
     }));
   };
 
@@ -99,10 +114,19 @@ class App extends Component<IAppProps, IAppState> {
   };
 
   updateFromToDates = (_: any, [fromString, toString]: [string, string]) => {
+    this.setState(prevState => ({
+      ...prevState,
+      isWorking: true
+    }));
+
     const { jsonAll } = this.state;
     const fromDate = moment(fromString, dateFormat).valueOf();
     const toDate = moment(toString, dateFormat).valueOf();
-    const { ballData, jsonSlice } = setToFromDate(jsonAll, fromDate, toDate);
+    const { ballData, powerData, jsonSlice } = setToFromDate(
+      jsonAll,
+      fromDate,
+      toDate
+    );
 
     Worker && this.worker.postMessage(jsonSlice);
     this.setState(prevState => ({
@@ -110,21 +134,25 @@ class App extends Component<IAppProps, IAppState> {
       jsonSlice,
       fromDate,
       toDate,
-      ballData
+      ballData,
+      powerData
     }));
   };
 
   render() {
     const {
+      isLoading,
+      isWorking,
       fromDate,
       toDate,
       jsonAll,
       jsonSlice,
       ballData,
+      powerData,
       comboData
     } = this.state;
     return (
-      <div>
+      <div style={{ background: colors.bgLight, minHeight: "100vh" }}>
         <div
           style={{
             background: colors.bgDark,
@@ -152,34 +180,81 @@ class App extends Component<IAppProps, IAppState> {
           </Row>
         </div>
 
-        <div style={{ background: colors.bgLight, padding: "16px" }}>
-          <h2>Statistics</h2>
-          <List
-            grid={{
-              gutter: 16,
-              xs: 2,
-              md: 4,
-              xxl: 8
-            }}
-            dataSource={ballData}
-            renderItem={({ title, frequencies }: IBallData) => (
-              <List.Item>
-                <Statistic
-                  title={title}
-                  frequencies={frequencies}
-                  handleToggle={this.toggleCurrentBall}
-                  checkIsActive={this.checkIsCurrentBall}
-                />
-              </List.Item>
+        <div style={{ padding: "16px" }}>
+          <Row type="flex" gutter={16}>
+            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
+              <h2>Single Balls</h2>
+            </Col>
+            {isLoading ? (
+              <ContentSpinner />
+            ) : (
+              ballData.map(({ title, frequencies }: IBallData) => (
+                <Col
+                  key={title}
+                  span={12}
+                  xs={8}
+                  lg={6}
+                  xxl={4}
+                  style={{ margin: "8px 0" }}
+                >
+                  <Statistic
+                    title={title}
+                    frequencies={frequencies}
+                    handleToggle={this.toggleCurrentBall}
+                    checkIsActive={this.checkIsCurrentBall}
+                  />
+                </Col>
+              ))
             )}
-          />
-          {Boolean(comboData.length) && (
-            <Combinations
-              comboData={comboData}
-              handleToggle={this.toggleCurrentBall}
-              checkIsActive={this.checkIsCurrentBall}
-            />
-          )}
+            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
+              <h2>Balls Combinations</h2>
+            </Col>
+            {isLoading || isWorking ? (
+              <ContentSpinner />
+            ) : (
+              comboData.map(({ title, combinations }: IComboData) => (
+                <Col
+                  key={title}
+                  span={24}
+                  xs={24}
+                  lg={12}
+                  xxl={8}
+                  style={{ margin: "8px 0" }}
+                >
+                  <Combinations
+                    title={title}
+                    combinations={combinations}
+                    handleToggle={this.toggleCurrentBall}
+                    checkIsActive={this.checkIsCurrentBall}
+                  />
+                </Col>
+              ))
+            )}
+            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
+              <h2>Power Ball</h2>
+            </Col>
+            {isLoading ? (
+              <ContentSpinner />
+            ) : (
+              powerData.map(({ title, frequencies }: IBallData) => (
+                <Col
+                  key={title}
+                  span={12}
+                  xs={8}
+                  lg={6}
+                  xxl={4}
+                  style={{ margin: "8px 0" }}
+                >
+                  <Statistic
+                    title={""}
+                    frequencies={frequencies}
+                    handleToggle={() => {}}
+                    checkIsActive={() => true}
+                  />
+                </Col>
+              ))
+            )}
+          </Row>
         </div>
       </div>
     );

@@ -10,8 +10,8 @@ import { colors } from "./statics";
 import { Table } from "antd";
 import { pathToFileURL } from "url";
 
-const MIN_COMBO_FREQUENCY = 3;
-const MIN_COMBO_MATCH_LENGTH = 4;
+// const MIN_COMBO_FREQUENCY = 3;
+// const MIN_COMBO_MATCH_LENGTH = 4;
 
 export const createListFromTo = (from: number, to: number): number[] =>
   new Array(to - from + 1).fill(0).map((_, index) => from + index);
@@ -107,6 +107,7 @@ export const setToFromDate = (
   toDate: number
 ): {
   ballData: IBallData[];
+  powerData: IBallData[];
   jsonSlice: IBallJson[];
 } => {
   const jsonSlice = sliceItemsByTime(jsonAll, fromDate, toDate);
@@ -130,101 +131,105 @@ export const setToFromDate = (
     {title: 'Ball Five', frequencies: getFrequencies(jsonSlice, [position5], 40, getBallColor) },
     {title: 'Ball Six', frequencies: getFrequencies(jsonSlice, [position6], 40, getBallColor) },
     {title: 'Bonus Ball', frequencies: getFrequencies(jsonSlice, [bonusBall1], 40, getBallColor) },
-    {title: 'Power Ball', frequencies: getFrequencies(jsonSlice, [powerBall], 10, () => 'blue') },
+  ];
+  // prettier-ignore
+  const powerData = [
+    {title: 'Power Ball', frequencies: getFrequencies(jsonSlice, [powerBall], 10, () => 'blue') }
   ];
 
   return {
     ballData,
+    powerData,
     jsonSlice
   };
 };
 
-type TComparison = number[];
+// type TComparison = number[];
 
-const compareRows = (
-  table: TComparison[],
-  comparison: TComparison
-): TComparison[] =>
-  table.reduce((acc: TComparison[], row: TComparison) => {
-    const match = comparison.filter(ball => row.includes(ball)).sort();
-    const isMatch = Boolean(match.length >= MIN_COMBO_MATCH_LENGTH);
+// const compareRows = (
+//   table: TComparison[],
+//   comparison: TComparison
+// ): TComparison[] =>
+//   table.reduce((acc: TComparison[], row: TComparison) => {
+//     const match = comparison.filter(ball => row.includes(ball)).sort();
+//     const isMatch = Boolean(match.length >= MIN_COMBO_MATCH_LENGTH);
 
-    return isMatch ? [...acc, match] : acc;
-  }, []);
+//     return isMatch ? [...acc, match] : acc;
+//   }, []);
 
-const compareTable = (table: TComparison[]): TComparison[] =>
-  table.reduce((acc: TComparison[], row: TComparison, index) => {
-    const data = [...table.slice(0, index), ...table.slice(index + 1)];
+// const compareTable = (table: TComparison[]): TComparison[] =>
+//   table.reduce((acc: TComparison[], row: TComparison, index) => {
+//     const data = [...table.slice(0, index), ...table.slice(index + 1)];
 
-    return [...acc, ...compareRows(data, row)];
-  }, []);
+//     return [...acc, ...compareRows(data, row)];
+//   }, []);
 
-interface ICombinationKeys {
-  [key: string]: IComboData;
-}
+// interface ICombinationKeys {
+//   [key: string]: IComboData;
+// }
 
-const getFrequency = (matches: TComparison[]): ICombinationKeys =>
-  matches.reduce((acc: ICombinationKeys, match: TComparison) => {
-    const key = match.join(",");
-    const hasKey = acc.hasOwnProperty(key);
+// const getFrequency = (matches: TComparison[]): ICombinationKeys =>
+//   matches.reduce((acc: ICombinationKeys, match: TComparison) => {
+//     const key = match.join(",");
+//     const hasKey = acc.hasOwnProperty(key);
 
-    if (hasKey) {
-      acc[key].frequency++;
-    } else {
-      acc[key] = {
-        balls: match,
-        frequency: 1
-      };
-    }
+//     if (hasKey) {
+//       acc[key].frequency++;
+//     } else {
+//       acc[key] = {
+//         balls: match,
+//         frequency: 1
+//       };
+//     }
 
-    return acc;
-  }, {});
+//     return acc;
+//   }, {});
 
-const flattenSequence = (frequency: ICombinationKeys): IComboData[] =>
-  Object.values(frequency).reduce(
-    (acc: IComboData[], item: IComboData) => [
-      ...acc,
-      { balls: item.balls, frequency: item.frequency }
-    ],
-    []
-  );
+// const flattenSequence = (frequency: ICombinationKeys): IComboData[] =>
+//   Object.values(frequency).reduce(
+//     (acc: IComboData[], item: IComboData) => [
+//       ...acc,
+//       { balls: item.balls, frequency: item.frequency }
+//     ],
+//     []
+//   );
 
-const prepareComboData = (table: IBallJson[]): TComparison[] =>
-  table.reduce(
-    (acc: TComparison[], row: IBallJson) => [
-      ...acc,
-      [
-        row.position1,
-        row.position2,
-        row.position3,
-        row.position4,
-        row.position5,
-        row.position6,
-        row.bonusBall1
-      ]
-    ],
-    []
-  );
+// const prepareComboData = (table: IBallJson[]): TComparison[] =>
+//   table.reduce(
+//     (acc: TComparison[], row: IBallJson) => [
+//       ...acc,
+//       [
+//         row.position1,
+//         row.position2,
+//         row.position3,
+//         row.position4,
+//         row.position5,
+//         row.position6,
+//         row.bonusBall1
+//       ]
+//     ],
+//     []
+//   );
 
-const sortCombinations = (table: IComboData[]): IComboData[] => {
-  const allCombinations = table
-    .filter(({ frequency }) => frequency >= MIN_COMBO_FREQUENCY)
-    .sort(({ frequency: frequencyA }, { frequency: frequencyB }) =>
-      frequencyA > frequencyB ? -1 : 1
-    )
-    .sort(({ balls: ballsA }, { balls: ballsB }) =>
-      ballsA.length > ballsB.length ? -1 : 1
-    );
+// const sortCombinations = (table: IComboData[]): IComboData[] => {
+//   const allCombinations = table
+//     .filter(({ frequency }) => frequency >= MIN_COMBO_FREQUENCY)
+//     .sort(({ frequency: frequencyA }, { frequency: frequencyB }) =>
+//       frequencyA > frequencyB ? -1 : 1
+//     )
+//     .sort(({ balls: ballsA }, { balls: ballsB }) =>
+//       ballsA.length > ballsB.length ? -1 : 1
+//     );
 
-  return allCombinations.slice(0, 10);
-};
+//   return allCombinations.slice(0, 10);
+// };
 
-export const createComboData = (table: IBallJson[]): IComboData[] => {
-  const prepped = prepareComboData(table);
-  const matches = compareTable(prepped);
-  const frequencies = getFrequency(matches);
-  const flattened = flattenSequence(frequencies);
-  const sorted = sortCombinations(flattened);
+// export const createComboData = (table: IBallJson[]): IComboData[] => {
+//   const prepped = prepareComboData(table);
+//   const matches = compareTable(prepped);
+//   const frequencies = getFrequency(matches);
+//   const flattened = flattenSequence(frequencies);
+//   const sorted = sortCombinations(flattened);
 
-  return sorted;
-};
+//   return sorted;
+// };

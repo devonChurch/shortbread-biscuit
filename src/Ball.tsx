@@ -1,4 +1,4 @@
-import React, { Component, Fragment, SFC } from "react";
+import React, { SFC } from "react";
 import { Tag } from "antd";
 
 interface IBall {
@@ -13,7 +13,7 @@ interface IBall {
 const Ball: SFC<IBall> = ({ ball, color, handleClick }) => (
   <Tag
     color={color}
-    style={{ minWidth: "40px", textAlign: "center" }}
+    style={{ margin: "4px", minWidth: "40px", textAlign: "center" }}
     onClick={() => handleClick(ball)}
   >
     {ball}
