@@ -23,17 +23,6 @@ interface IAppState {
 
 interface IAppProps {}
 
-if (Worker) {
-  const worker = new Worker("worker.js");
-
-  worker.onmessage = function(event) {
-    console.log("back from the worker...", event);
-    console.log(`on message ${event.data}`);
-  };
-
-  worker.postMessage("hello");
-}
-
 class App extends Component<IAppProps, IAppState> {
   state: IAppState = {
     ballData: [],
@@ -45,9 +34,24 @@ class App extends Component<IAppProps, IAppState> {
     jsonSlice: []
   };
 
+  worker: Worker;
+
   constructor() {
     super({} as IAppProps);
+    this.worker = Worker && new Worker("worker.js");
     this.getData();
+  }
+
+  componentDidMount() {
+    if (Worker) {
+      this.worker.onmessage = event => {
+        console.log("back from the worker...", event);
+        this.setState(prevState => ({
+          ...prevState,
+          comboData: event.data
+        }));
+      };
+    }
   }
 
   getData = async () => {
@@ -58,16 +62,12 @@ class App extends Component<IAppProps, IAppState> {
     const { data: csv } = response;
     const csvJson = await csvToJson().fromString(csv);
     const enrichedJson = enrichJsonData(csvJson);
-    // console.log(enrichedJson);
     const jsonAll = enrichedJson;
     const fromDate = enrichedJson.slice(-1)[0].drawTime;
     const toDate = enrichedJson[0].drawTime;
     const { ballData, jsonSlice } = setToFromDate(jsonAll, fromDate, toDate);
-    // const comboData = createComboData(jsonSlice);
-    // console.log(comboData);
 
-    // myWorker.postMessage([first.value,second.value]);
-
+    Worker && this.worker.postMessage(jsonSlice);
     this.setState(prevState => ({
       ...prevState,
       jsonAll,
@@ -75,7 +75,6 @@ class App extends Component<IAppProps, IAppState> {
       fromDate,
       toDate,
       ballData
-      // comboData
     }));
   };
 
@@ -104,15 +103,14 @@ class App extends Component<IAppProps, IAppState> {
     const fromDate = moment(fromString, dateFormat).valueOf();
     const toDate = moment(toString, dateFormat).valueOf();
     const { ballData, jsonSlice } = setToFromDate(jsonAll, fromDate, toDate);
-    const comboData = createComboData(jsonSlice);
 
+    Worker && this.worker.postMessage(jsonSlice);
     this.setState(prevState => ({
       ...prevState,
       jsonSlice,
       fromDate,
       toDate,
-      ballData,
-      comboData
+      ballData
     }));
   };
 
