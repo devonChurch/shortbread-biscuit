@@ -14,6 +14,8 @@ import { pathToFileURL } from "url";
 // const MIN_COMBO_FREQUENCY = 3;
 // const MIN_COMBO_MATCH_LENGTH = 4;
 
+export const getTimeNow = () => new Date().getTime();
+
 export const createListFromTo = (from: number, to: number): number[] =>
   new Array(to - from + 1).fill(0).map((_, index) => from + index);
 

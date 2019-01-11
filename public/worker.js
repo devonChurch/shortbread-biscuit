@@ -11,6 +11,8 @@ const TITLE_KEYS = {
 };
 
 const createRowComparison = () => {
+  // let progress = 0;
+  // let totalItems;
   const cache = [];
   const createCacheEntry = (indexA, indexB) =>
     `${Math.min(indexA, indexB)},${Math.max(indexA, indexB)}`;
@@ -21,6 +23,24 @@ const createRowComparison = () => {
 
   return (table, comparison, comboIndex) =>
     table.reduce((acc, row, rowIndex) => {
+      // if (!totalItems) {
+      //   totalItems = table.length;
+      // }
+      // const previous = progress;
+      // const current = Math.round(((comboIndex + 1) / totalItems) * 100);
+      // if (current > previous && current !== 100) {
+      //   progress = current;
+      //   postMessage({
+      //     isComplete: false,
+      //     progress
+      //   });
+      // }
+
+      postMessage({
+        isComplete: false,
+        progress: comboIndex + 1
+      });
+
       if (checkIsInCache(comboIndex, rowIndex)) {
         return acc;
       } else {
@@ -148,5 +168,8 @@ onmessage = function(event) {
   const sections = sectionCombinations(sorted);
   const colors = enrichWithColor(sections);
 
-  postMessage(colors);
+  postMessage({
+    isComplete: true,
+    combinations: colors
+  });
 };

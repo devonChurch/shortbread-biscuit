@@ -8,24 +8,27 @@ import { colors, dateFormat } from "./statics";
 import {
   setToFromDate,
   enrichJsonData,
-  getBallColor,
-  enrichCombinationsWithColor
+  enrichCombinationsWithColor,
+  getTimeNow
 } from "./helpers";
 import Select from "./Select";
 import Time from "./Time";
 import Statistic from "./Statistic";
 import Combinations from "./Combinations";
 import ContentSpinner from "./ContentSpinner";
+import ContentProgress from "./ContentProgress";
 
 interface IAppState {
   isLoading: boolean;
-  isWorking: boolean;
+  workerPercent: number;
   ballData: IBallData[];
   powerData: IBallData[];
   comboData: IComboData[];
   currentBalls: number[];
-  fromDate: number; // Milliseconds Date(x).getTime();
-  toDate: number; // Milliseconds Date(y).getTime();
+  dateRangeMin: number; // Milliseconds.
+  dateRangeMax: number; // Milliseconds.
+  fromDate: number; //     Milliseconds.
+  toDate: number; //       Milliseconds.
   jsonAll: IBallJson[];
   jsonSlice: IBallJson[];
 }
@@ -35,11 +38,13 @@ interface IAppProps {}
 class App extends Component<IAppProps, IAppState> {
   state: IAppState = {
     isLoading: true,
-    isWorking: true,
+    workerPercent: 0,
     ballData: [],
     powerData: [],
     comboData: [],
     currentBalls: [],
+    dateRangeMin: 0,
+    dateRangeMax: 0,
     fromDate: 0,
     toDate: 0,
     jsonAll: [],
@@ -54,14 +59,47 @@ class App extends Component<IAppProps, IAppState> {
     this.getData();
   }
 
+  checkShouldProgressUpdate = (() => {
+    let prevUpdate = getTimeNow();
+
+    return () => {
+      const currentUpdate = getTimeNow();
+      const nextUpdate = prevUpdate + 500;
+      const shouldUpdate = currentUpdate > nextUpdate;
+
+      if (shouldUpdate) {
+        prevUpdate = currentUpdate;
+      }
+
+      return shouldUpdate;
+    };
+  })();
+
   componentDidMount() {
     if (Worker) {
       this.worker.onmessage = event => {
-        this.setState(prevState => ({
-          ...prevState,
-          isWorking: false,
-          comboData: enrichCombinationsWithColor(event.data)
-        }));
+        const { isComplete, combinations, progress } = event.data;
+
+        if (isComplete) {
+          this.setState(prevState => ({
+            ...prevState,
+            workerPercent: 99
+          }));
+          setTimeout(() => {
+            this.setState(prevState => ({
+              ...prevState,
+              workerPercent: 100,
+              comboData: enrichCombinationsWithColor(combinations)
+            }));
+          }, 500);
+        } else if (this.checkShouldProgressUpdate()) {
+          this.setState(prevState => ({
+            ...prevState,
+            workerPercent: Math.round(
+              (progress / prevState.jsonSlice.length) * 100
+            )
+          }));
+        }
       };
     }
   }
@@ -75,9 +113,10 @@ class App extends Component<IAppProps, IAppState> {
     const csvJson = await csvToJson().fromString(csv);
     const enrichedJson = enrichJsonData(csvJson);
     const jsonAll = enrichedJson;
-    // const fromDate = enrichedJson.slice(-1)[0].drawTime;
+    const dateRangeMin = enrichedJson.slice(-1)[0].drawTime;
     const fromDate = new Date("01/06/2017").getTime();
-    const toDate = enrichedJson[0].drawTime;
+    const dateRangeMax = enrichedJson[0].drawTime;
+    const toDate = dateRangeMax;
     const { ballData, powerData, jsonSlice } = setToFromDate(
       jsonAll,
       fromDate,
@@ -90,6 +129,8 @@ class App extends Component<IAppProps, IAppState> {
       isLoading: false,
       jsonAll,
       jsonSlice,
+      dateRangeMin,
+      dateRangeMax,
       fromDate,
       toDate,
       ballData,
@@ -120,7 +161,7 @@ class App extends Component<IAppProps, IAppState> {
   updateFromToDates = (_: any, [fromString, toString]: [string, string]) => {
     this.setState(prevState => ({
       ...prevState,
-      isWorking: true
+      workerPercent: 0
     }));
 
     const { jsonAll } = this.state;
@@ -146,7 +187,9 @@ class App extends Component<IAppProps, IAppState> {
   render() {
     const {
       isLoading,
-      isWorking,
+      workerPercent,
+      dateRangeMin,
+      dateRangeMax,
       fromDate,
       toDate,
       jsonAll,
@@ -174,6 +217,8 @@ class App extends Component<IAppProps, IAppState> {
 
             <Col span={24} xs={24} lg={24} xxl={12} style={{ margin: "8px 0" }}>
               <Time
+                dateRangeMin={dateRangeMin}
+                dateRangeMax={dateRangeMax}
                 fromDate={fromDate}
                 toDate={toDate}
                 handleChange={this.updateFromToDates}
@@ -188,6 +233,11 @@ class App extends Component<IAppProps, IAppState> {
           <Row type="flex" gutter={16}>
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Single Balls</h2>
+              <p style={{ maxWidth: "900px" }}>
+                Looking at each <em>Lotto Ball</em> in isolation. What ball{" "}
+                <strong>appeared the most</strong>? Where did each ball fall
+                during the <strong>draw order</strong>?
+              </p>
             </Col>
             {isLoading ? (
               <ContentSpinner />
@@ -198,7 +248,7 @@ class App extends Component<IAppProps, IAppState> {
                   span={12}
                   xs={8}
                   lg={6}
-                  xxl={4}
+                  xxl={3}
                   style={{ margin: "8px 0" }}
                 >
                   <Statistic
@@ -212,9 +262,17 @@ class App extends Component<IAppProps, IAppState> {
             )}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Balls Combinations</h2>
+              <p style={{ maxWidth: "900px" }}>
+                Finding similar <em>Lotto Ball</em> combinations between each
+                draw. We disregard <strong>ball order</strong> and instead{" "}
+                <strong>aggregate</strong> each combination match based on{" "}
+                <strong>ball values</strong>.
+              </p>
             </Col>
-            {isLoading || isWorking ? (
+            {isLoading ? (
               <ContentSpinner />
+            ) : workerPercent < 100 ? (
+              <ContentProgress percent={workerPercent} />
             ) : (
               comboData.map(({ title, combinations }: IComboData) => (
                 <Col
@@ -222,7 +280,7 @@ class App extends Component<IAppProps, IAppState> {
                   span={24}
                   xs={24}
                   lg={12}
-                  xxl={8}
+                  xxl={6}
                   style={{ margin: "8px 0" }}
                 >
                   <Combinations
@@ -236,6 +294,11 @@ class App extends Component<IAppProps, IAppState> {
             )}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Power Ball</h2>
+              <p style={{ maxWidth: "900px" }}>
+                Show the most frequent appearing <em>Lotto Power Ball</em>. This
+                part of the draw has no affiliation to the{" "}
+                <strong>generic</strong> <em>Lotto Ball</em> references above.
+              </p>
             </Col>
             {isLoading ? (
               <ContentSpinner />
