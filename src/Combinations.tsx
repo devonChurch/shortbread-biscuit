@@ -19,7 +19,7 @@ const Combinations: SFC<ICombinations> = ({
   <Card title={title}>
     {combinations.map(({ balls, frequency }) => (
       <div key={balls.join(",")}>
-        {balls.map(ball => (
+        {balls.map(([ball, color]) => (
           <span
             key={ball}
             style={{
@@ -28,7 +28,7 @@ const Combinations: SFC<ICombinations> = ({
           >
             <Ball
               ball={ball}
-              color={"blue"}
+              color={color}
               handleClick={() => handleToggle(ball)}
             />
           </span>

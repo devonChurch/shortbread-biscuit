@@ -1,4 +1,4 @@
-const MIN_COMBO_FREQUENCY = 1;
+const MIN_COMBO_FREQUENCY = 2;
 const MIN_COMBO_MATCH_LENGTH = 3;
 const MAX_COMBO_PER_SECTION = 10;
 const TITLE_KEYS = {
@@ -9,14 +9,6 @@ const TITLE_KEYS = {
   5: "Five",
   6: "Six"
 };
-
-// const compareRows = (table, comparison) =>
-//   table.reduce((acc, row) => {
-//     const match = comparison.filter(ball => row.includes(ball)).sort();
-//     const isMatch = Boolean(match.length >= MIN_COMBO_MATCH_LENGTH);
-
-//     return isMatch ? [...acc, match] : acc;
-//   }, []);
 
 const createRowComparison = () => {
   const cache = [];
@@ -69,7 +61,17 @@ const getFrequency = matches =>
 
 const flattenSequence = frequency =>
   Object.values(frequency).reduce(
-    (acc, item) => [...acc, { balls: item.balls, frequency: item.frequency }],
+    (acc, item) => [
+      ...acc,
+      {
+        balls: item.balls,
+        // We add "one" onto the frequency as we never test a combination against
+        // itself. This would result in various false positives the more matches
+        // there were. In that regard simply adding "one" accounts for the
+        // "original" match.
+        frequency: item.frequency + 1
+      }
+    ],
     []
   );
 
@@ -101,7 +103,6 @@ const sortCombinations = table =>
     );
 
 const sectionCombinations = table => {
-  // debugger;
   const keyValuePairs = table.reduce((acc, row) => {
     const length = row.balls.length;
     const combinations = acc[length] || [];
@@ -113,8 +114,7 @@ const sectionCombinations = table => {
 
     return acc;
   }, {});
-  console.log("keyValuePairs", keyValuePairs);
-  // debugger;
+
   return Object.entries(keyValuePairs).reduce(
     (acc, [key, combinations]) => [
       ...acc,
@@ -124,18 +124,29 @@ const sectionCombinations = table => {
   );
 };
 
-onmessage = function(event) {
-  console.log("inside the worker...", event);
+// We cannot pass in the master "getBallColor" function into the worker (as per
+// the spec). So in order to conform to the type interface for the "combination
+// data" we add in a generic  place holder that can be updated once we are back
+// on the main thread.
+const enrichWithColor = data =>
+  data.map(({ title, combinations }) => ({
+    title,
+    combinations: combinations.map(({ frequency, balls }) => ({
+      frequency,
+      balls: balls.map(ball => [ball, "blue"])
+    }))
+  }));
 
-  const prepped = prepareComboData(event.data);
+onmessage = function(event) {
+  const { json } = event.data;
+  const prepped = prepareComboData(json);
   const compareRows = createRowComparison();
   const matches = compareTable(prepped, compareRows);
   const frequencies = getFrequency(matches);
   const flattened = flattenSequence(frequencies);
   const sorted = sortCombinations(flattened);
-  console.log("sorted", sorted);
   const sections = sectionCombinations(sorted);
-  console.log("sections", sections);
+  const colors = enrichWithColor(sections);
 
-  postMessage(sections);
+  postMessage(colors);
 };

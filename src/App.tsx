@@ -5,7 +5,12 @@ import moment from "moment";
 import { Row, Col } from "antd";
 import { IBallData, IBallJson, IComboData } from "./types";
 import { colors, dateFormat } from "./statics";
-import { setToFromDate, enrichJsonData } from "./helpers";
+import {
+  setToFromDate,
+  enrichJsonData,
+  getBallColor,
+  enrichCombinationsWithColor
+} from "./helpers";
 import Select from "./Select";
 import Time from "./Time";
 import Statistic from "./Statistic";
@@ -52,11 +57,10 @@ class App extends Component<IAppProps, IAppState> {
   componentDidMount() {
     if (Worker) {
       this.worker.onmessage = event => {
-        console.log("back from the worker...", event);
         this.setState(prevState => ({
           ...prevState,
           isWorking: false,
-          comboData: event.data
+          comboData: enrichCombinationsWithColor(event.data)
         }));
       };
     }
@@ -80,7 +84,7 @@ class App extends Component<IAppProps, IAppState> {
       toDate
     );
 
-    Worker && this.worker.postMessage(jsonSlice);
+    Worker && this.worker.postMessage({ json: jsonSlice });
     this.setState(prevState => ({
       ...prevState,
       isLoading: false,
@@ -128,7 +132,7 @@ class App extends Component<IAppProps, IAppState> {
       toDate
     );
 
-    Worker && this.worker.postMessage(jsonSlice);
+    Worker && this.worker.postMessage({ json: jsonSlice });
     this.setState(prevState => ({
       ...prevState,
       jsonSlice,

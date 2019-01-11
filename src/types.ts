@@ -1,9 +1,7 @@
 export type TBallFrequency = [
   number, // Ball.
-  // Color.
   number, // Frequency.
-  string // Ball.
-  // Color.
+  string // Color.
 ];
 
 export interface IBallData {
@@ -56,7 +54,10 @@ export enum EBallKeys {
 }
 
 export interface ICombinations {
-  balls: number[];
+  balls: [
+    number, // Ball.
+    string // Color.
+  ][];
   frequency: number;
 }
 

@@ -4,7 +4,8 @@ import {
   IBallCsv,
   IBallJson,
   EBallKeys,
-  IComboData
+  IComboData,
+  ICombinations
 } from "./types";
 import { colors } from "./statics";
 import { Table } from "antd";
@@ -143,6 +144,17 @@ export const setToFromDate = (
     jsonSlice
   };
 };
+
+export const enrichCombinationsWithColor = (
+  comboData: IComboData[]
+): IComboData[] =>
+  comboData.map(({ title, combinations }) => ({
+    title,
+    combinations: combinations.map(({ frequency, balls }) => ({
+      frequency,
+      balls: balls.map(([ball]): [number, string] => [ball, getBallColor(ball)])
+    }))
+  }));
 
 // type TComparison = number[];
 
