@@ -23,19 +23,6 @@ const createRowComparison = () => {
 
   return (table, comparison, comboIndex) =>
     table.reduce((acc, row, rowIndex) => {
-      // if (!totalItems) {
-      //   totalItems = table.length;
-      // }
-      // const previous = progress;
-      // const current = Math.round(((comboIndex + 1) / totalItems) * 100);
-      // if (current > previous && current !== 100) {
-      //   progress = current;
-      //   postMessage({
-      //     isComplete: false,
-      //     progress
-      //   });
-      // }
-
       postMessage({
         isComplete: false,
         progress: comboIndex + 1
@@ -55,8 +42,6 @@ const createRowComparison = () => {
 
 const compareTable = (table, compareRows) =>
   table.reduce((acc, row, index) => {
-    // console.log(`comparing row ${index}`);
-    // const data = [...table.slice(0, index), ...table.slice(index + 1)];
     const data = table.slice(index + 1);
 
     return [...acc, ...compareRows(data, row, index)];

@@ -312,12 +312,7 @@ class App extends Component<IAppProps, IAppState> {
                   xxl={4}
                   style={{ margin: "8px 0" }}
                 >
-                  <Statistic
-                    title={""}
-                    frequencies={frequencies}
-                    handleToggle={() => {}}
-                    checkIsActive={() => true}
-                  />
+                  <Statistic title={""} frequencies={frequencies} />
                 </Col>
               ))
             )}

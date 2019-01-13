@@ -1,4 +1,5 @@
 import React, { SFC } from "react";
+import moize from "moize";
 import { Spin, Col } from "antd";
 
 interface IContentSpinner {}
@@ -9,4 +10,4 @@ const ContentSpinner: SFC<IContentSpinner> = () => (
   </Col>
 );
 
-export default ContentSpinner;
+export default moize.reactSimple(ContentSpinner);

@@ -26,11 +26,7 @@ const Combinations: SFC<ICombinations> = ({
               opacity: checkIsActive(ball) ? 1 : 0.2
             }}
           >
-            <Ball
-              ball={ball}
-              color={color}
-              handleClick={() => handleToggle(ball)}
-            />
+            <Ball ball={ball} color={color} handleClick={handleToggle} />
           </span>
         ))}
         x{frequency}

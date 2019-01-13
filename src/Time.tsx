@@ -1,4 +1,5 @@
 import React, { Fragment, SFC } from "react";
+import moize from "moize";
 import moment from "moment";
 import { Card, DatePicker, Alert, Spin } from "antd";
 import { dateFormat } from "./statics";
@@ -82,4 +83,4 @@ const Time: SFC<ITime> = ({
   </Card>
 );
 
-export default Time;
+export default moize.reactSimple(Time);

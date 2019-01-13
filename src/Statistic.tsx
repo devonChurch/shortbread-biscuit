@@ -6,8 +6,8 @@ import Ball from "./Ball";
 interface IStatistic {
   title: IBallData["title"];
   frequencies: IBallData["frequencies"];
-  handleToggle: (ball: number) => void;
-  checkIsActive: (ball: number) => boolean;
+  handleToggle?: (ball: number) => void;
+  checkIsActive?: (ball: number) => boolean;
 }
 
 const Statistic: SFC<IStatistic> = ({
@@ -23,15 +23,11 @@ const Statistic: SFC<IStatistic> = ({
           <div
             key={ball}
             style={{
-              opacity: checkIsActive(ball) ? 1 : 0.2
+              opacity: !checkIsActive || checkIsActive(ball) ? 1 : 0.2
             }}
           >
-            <Ball
-              ball={ball}
-              color={color}
-              handleClick={() => handleToggle(ball)}
-            />
-            x{frequency}
+            <Ball ball={ball} color={color} handleClick={handleToggle} />x
+            {frequency}
           </div>
         )
     )}
