@@ -5,14 +5,10 @@ import {
   IBallJson,
   EBallKeys,
   IComboData,
-  ICombinations
+  IDrawItem,
+  IDrawData
 } from "./types";
 import { colors } from "./statics";
-import { Table } from "antd";
-import { pathToFileURL } from "url";
-
-// const MIN_COMBO_FREQUENCY = 3;
-// const MIN_COMBO_MATCH_LENGTH = 4;
 
 export const getTimeNow = () => new Date().getTime();
 
@@ -158,92 +154,65 @@ export const enrichCombinationsWithColor = (
     }))
   }));
 
-// type TComparison = number[];
+const createDrawItem = ({
+  position1,
+  position2,
+  position3,
+  position4,
+  position5,
+  position6,
+  bonusBall1,
+  powerBall,
+  drawNum
+}: IBallJson): IDrawItem => ({
+  drawNum,
+  balls: [
+    [position1, getBallColor(position1)],
+    [position2, getBallColor(position2)],
+    [position3, getBallColor(position3)],
+    [position4, getBallColor(position4)],
+    [position5, getBallColor(position5)],
+    [position6, getBallColor(position6)],
+    [bonusBall1, getBallColor(bonusBall1)],
+    [powerBall, "blue"]
+  ]
+});
 
-// const compareRows = (
-//   table: TComparison[],
-//   comparison: TComparison
-// ): TComparison[] =>
-//   table.reduce((acc: TComparison[], row: TComparison) => {
-//     const match = comparison.filter(ball => row.includes(ball)).sort();
-//     const isMatch = Boolean(match.length >= MIN_COMBO_MATCH_LENGTH);
+interface IDrawShell {
+  segments: IDrawData[];
+  segment: IDrawData;
+}
 
-//     return isMatch ? [...acc, match] : acc;
-//   }, []);
+export const createDrawData = (table: IBallJson[]): IDrawData[] => {
+  const itemsPerCard = 50;
+  const shell = {
+    segments: [],
+    segment: { title: "", draws: [] }
+  };
 
-// const compareTable = (table: TComparison[]): TComparison[] =>
-//   table.reduce((acc: TComparison[], row: TComparison, index) => {
-//     const data = [...table.slice(0, index), ...table.slice(index + 1)];
+  const { segments } = table.reduce(
+    (acc, row, index) => {
+      const increment = index + 1;
+      const { segments, segment } = acc;
+      const { draws } = segment;
+      const { drawNum } = row;
+      const totalDraws = draws.length;
+      const isFull = totalDraws > itemsPerCard || increment === table.length;
 
-//     return [...acc, ...compareRows(data, row)];
-//   }, []);
+      if (isFull) {
+        segments.push({
+          title: `Draw ${drawNum + 1 + (totalDraws - 1)} to ${drawNum + 1}`,
+          draws
+        });
+        segment.draws = [createDrawItem(row)];
+      } else {
+        segment.draws.push(createDrawItem(row));
+      }
 
-// interface ICombinationKeys {
-//   [key: string]: IComboData;
-// }
+      return { segments, segment };
+    },
+    shell as IDrawShell
+  );
 
-// const getFrequency = (matches: TComparison[]): ICombinationKeys =>
-//   matches.reduce((acc: ICombinationKeys, match: TComparison) => {
-//     const key = match.join(",");
-//     const hasKey = acc.hasOwnProperty(key);
-
-//     if (hasKey) {
-//       acc[key].frequency++;
-//     } else {
-//       acc[key] = {
-//         balls: match,
-//         frequency: 1
-//       };
-//     }
-
-//     return acc;
-//   }, {});
-
-// const flattenSequence = (frequency: ICombinationKeys): IComboData[] =>
-//   Object.values(frequency).reduce(
-//     (acc: IComboData[], item: IComboData) => [
-//       ...acc,
-//       { balls: item.balls, frequency: item.frequency }
-//     ],
-//     []
-//   );
-
-// const prepareComboData = (table: IBallJson[]): TComparison[] =>
-//   table.reduce(
-//     (acc: TComparison[], row: IBallJson) => [
-//       ...acc,
-//       [
-//         row.position1,
-//         row.position2,
-//         row.position3,
-//         row.position4,
-//         row.position5,
-//         row.position6,
-//         row.bonusBall1
-//       ]
-//     ],
-//     []
-//   );
-
-// const sortCombinations = (table: IComboData[]): IComboData[] => {
-//   const allCombinations = table
-//     .filter(({ frequency }) => frequency >= MIN_COMBO_FREQUENCY)
-//     .sort(({ frequency: frequencyA }, { frequency: frequencyB }) =>
-//       frequencyA > frequencyB ? -1 : 1
-//     )
-//     .sort(({ balls: ballsA }, { balls: ballsB }) =>
-//       ballsA.length > ballsB.length ? -1 : 1
-//     );
-
-//   return allCombinations.slice(0, 10);
-// };
-
-// export const createComboData = (table: IBallJson[]): IComboData[] => {
-//   const prepped = prepareComboData(table);
-//   const matches = compareTable(prepped);
-//   const frequencies = getFrequency(matches);
-//   const flattened = flattenSequence(frequencies);
-//   const sorted = sortCombinations(flattened);
-
-//   return sorted;
-// };
+  return segments;
+};

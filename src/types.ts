@@ -1,3 +1,5 @@
+import { string, number } from "prop-types";
+
 export type TBallFrequency = [
   number, // Ball.
   number, // Frequency.
@@ -64,4 +66,17 @@ export interface ICombinations {
 export interface IComboData {
   title: string;
   combinations: ICombinations[];
+}
+
+export interface IDrawItem {
+  drawNum: number;
+  balls: [
+    number, // Ball.
+    string // Color.
+  ][];
+}
+
+export interface IDrawData {
+  title: string;
+  draws: IDrawItem[];
 }

@@ -3,17 +3,19 @@ import axios from "axios";
 import csvToJson from "csvtojson";
 import moment from "moment";
 import { Row, Col } from "antd";
-import { IBallData, IBallJson, IComboData } from "./types";
+import { IBallData, IBallJson, IComboData, IDrawData } from "./types";
 import { colors, dateFormat } from "./statics";
 import {
   setToFromDate,
   enrichJsonData,
   enrichCombinationsWithColor,
-  getTimeNow
+  getTimeNow,
+  createDrawData
 } from "./helpers";
 import Select from "./Select";
 import Time from "./Time";
 import Statistic from "./Statistic";
+import Draw from "./Draw";
 import Combinations from "./Combinations";
 import ContentSpinner from "./ContentSpinner";
 import ContentProgress from "./ContentProgress";
@@ -24,6 +26,7 @@ interface IAppState {
   ballData: IBallData[];
   powerData: IBallData[];
   comboData: IComboData[];
+  drawData: IDrawData[];
   currentBalls: number[];
   dateRangeMin: number; // Milliseconds.
   dateRangeMax: number; // Milliseconds.
@@ -42,6 +45,7 @@ class App extends Component<IAppProps, IAppState> {
     ballData: [],
     powerData: [],
     comboData: [],
+    drawData: [],
     currentBalls: [],
     dateRangeMin: 0,
     dateRangeMax: 0,
@@ -114,7 +118,7 @@ class App extends Component<IAppProps, IAppState> {
     const enrichedJson = enrichJsonData(csvJson);
     const jsonAll = enrichedJson;
     const dateRangeMin = enrichedJson.slice(-1)[0].drawTime;
-    const fromDate = new Date("01/06/2017").getTime();
+    const fromDate = new Date("01/06/2018").getTime();
     const dateRangeMax = enrichedJson[0].drawTime;
     const toDate = dateRangeMax;
     const { ballData, powerData, jsonSlice } = setToFromDate(
@@ -122,6 +126,7 @@ class App extends Component<IAppProps, IAppState> {
       fromDate,
       toDate
     );
+    const drawData = createDrawData(jsonSlice);
 
     Worker && this.worker.postMessage({ json: jsonSlice });
     this.setState(prevState => ({
@@ -134,7 +139,8 @@ class App extends Component<IAppProps, IAppState> {
       fromDate,
       toDate,
       ballData,
-      powerData
+      powerData,
+      drawData
     }));
   };
 
@@ -172,6 +178,7 @@ class App extends Component<IAppProps, IAppState> {
       fromDate,
       toDate
     );
+    const drawData = createDrawData(jsonSlice);
 
     Worker && this.worker.postMessage({ json: jsonSlice });
     this.setState(prevState => ({
@@ -180,7 +187,8 @@ class App extends Component<IAppProps, IAppState> {
       fromDate,
       toDate,
       ballData,
-      powerData
+      powerData,
+      drawData
     }));
   };
 
@@ -196,7 +204,8 @@ class App extends Component<IAppProps, IAppState> {
       jsonSlice,
       ballData,
       powerData,
-      comboData
+      comboData,
+      drawData
     } = this.state;
     return (
       <div style={{ background: colors.bgLight, minHeight: "100vh" }}>
@@ -313,6 +322,38 @@ class App extends Component<IAppProps, IAppState> {
                   style={{ margin: "8px 0" }}
                 >
                   <Statistic title={""} frequencies={frequencies} />
+                </Col>
+              ))
+            )}
+            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
+              <h2>Draws</h2>
+              <p style={{ maxWidth: "900px" }}>
+                List the <em>Lotto Draws</em> in descending order{" "}
+                <em>
+                  (including <strong>Bonus</strong> and <strong>Power</strong>{" "}
+                  Balls)
+                </em>
+                .
+              </p>
+            </Col>
+            {isLoading ? (
+              <ContentSpinner />
+            ) : (
+              drawData.map(({ title, draws }: IDrawData) => (
+                <Col
+                  key={title}
+                  span={24}
+                  xs={24}
+                  lg={12}
+                  xxl={6}
+                  style={{ margin: "8px 0" }}
+                >
+                  <Draw
+                    title={title}
+                    draws={draws}
+                    handleToggle={this.toggleCurrentBall}
+                    checkIsActive={this.checkIsCurrentBall}
+                  />
                 </Col>
               ))
             )}

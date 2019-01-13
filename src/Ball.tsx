@@ -19,11 +19,16 @@ class Ball extends PureComponent<IProps, IState> {
   };
 
   render() {
-    const { ball, color } = this.props;
+    const { ball, color, handleClick } = this.props;
     return (
       <Tag
         color={color}
-        style={{ margin: "4px", minWidth: "40px", textAlign: "center" }}
+        style={{
+          margin: "4px",
+          minWidth: "40px",
+          textAlign: "center",
+          pointerEvents: handleClick ? "initial" : "none"
+        }}
         onClick={this.handleClick}
       >
         {ball}
