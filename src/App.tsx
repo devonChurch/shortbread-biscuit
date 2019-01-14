@@ -126,6 +126,7 @@ class App extends Component<IAppProps, IAppState> {
       fromDate,
       toDate
     );
+    console.log(jsonSlice);
     const drawData = createDrawData(jsonSlice);
 
     Worker && this.worker.postMessage({ json: jsonSlice });
@@ -154,6 +155,13 @@ class App extends Component<IAppProps, IAppState> {
 
       return { ...prevState, currentBalls };
     });
+  };
+
+  clearCurrentBalls = () => {
+    this.setState(prevState => ({
+      ...prevState,
+      currentBalls: []
+    }));
   };
 
   checkIsCurrentBall = (ball: number): boolean => {
@@ -205,7 +213,8 @@ class App extends Component<IAppProps, IAppState> {
       ballData,
       powerData,
       comboData,
-      drawData
+      drawData,
+      currentBalls
     } = this.state;
     return (
       <div style={{ background: colors.bgLight, minHeight: "100vh" }}>
@@ -221,6 +230,11 @@ class App extends Component<IAppProps, IAppState> {
               <Select
                 handleToggle={this.toggleCurrentBall}
                 checkIsActive={this.checkIsCurrentBall}
+                handleClear={
+                  Boolean(currentBalls.length)
+                    ? this.clearCurrentBalls
+                    : undefined
+                }
               />
             </Col>
 
