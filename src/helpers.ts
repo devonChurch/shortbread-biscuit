@@ -1,14 +1,22 @@
+import axios from "axios";
+import csvToJson from "csvtojson";
 import {
   TBallFrequency,
   IBallData,
-  IBallCsv,
-  IBallJson,
-  EBallKeys,
+  ILottoDataCsv,
+  ILottoDataJson,
+  ELottoJsonKeys,
   IComboData,
   IDrawItem,
   IDrawData
 } from "./types";
 import { colors } from "./statics";
+
+export const fetchCsvData = () =>
+  axios({
+    method: "get",
+    url: "lotto-numbers.csv"
+  });
 
 export const getTimeNow = () => new Date().getTime();
 
@@ -31,8 +39,8 @@ export const getBallColor = (ball: number): string => {
 };
 
 export const getFrequencies = (
-  json: IBallJson[],
-  columns: EBallKeys[],
+  json: ILottoDataJson[],
+  columns: ELottoJsonKeys[],
   max: number,
   createColor: (ball: number) => string
 ): TBallFrequency[] => {
@@ -64,13 +72,13 @@ export const getFrequencies = (
 };
 
 export const sliceItemsByTime = (
-  json: IBallJson[],
+  json: ILottoDataJson[],
   fromDate: number,
   toDate: number
-): IBallJson[] =>
+): ILottoDataJson[] =>
   json.filter(({ drawTime }) => drawTime >= fromDate && drawTime <= toDate);
 
-export const enrichJsonData = (csvJson: IBallCsv[]): IBallJson[] =>
+export const enrichJsonData = (csvJson: ILottoDataCsv[]): ILottoDataJson[] =>
   csvJson.map(
     ({
       1: position1, //                 "33"
@@ -100,14 +108,29 @@ export const enrichJsonData = (csvJson: IBallCsv[]): IBallJson[] =>
     })
   );
 
+export const convertLottoCsvDataToJson = async (
+  rawCsvData: string
+): Promise<ILottoDataJson[]> => {
+  const csvJson = await csvToJson().fromString(rawCsvData);
+
+  return enrichJsonData(csvJson);
+};
+
+export const extractDateBoundsFromLottoData = (
+  lottoData: ILottoDataJson[]
+) => ({
+  oldest: lottoData.slice(-1)[0].drawTime,
+  newest: lottoData[0].drawTime
+});
+
 export const setToFromDate = (
-  jsonAll: IBallJson[],
+  jsonAll: ILottoDataJson[],
   fromDate: number,
   toDate: number
 ): {
   ballData: IBallData[];
   powerData: IBallData[];
-  jsonSlice: IBallJson[];
+  jsonSlice: ILottoDataJson[];
 } => {
   const jsonSlice = sliceItemsByTime(jsonAll, fromDate, toDate);
   const {
@@ -119,7 +142,7 @@ export const setToFromDate = (
     position6,
     bonusBall1,
     powerBall
-  } = EBallKeys;
+  } = ELottoJsonKeys;
   // prettier-ignore
   const ballData = [
     {title: 'Most Frequent', frequencies: getFrequencies(jsonSlice, [position1, position1, position2, position3, position4, position5, position6, bonusBall1], 40, getBallColor) },
@@ -164,7 +187,7 @@ const createDrawItem = ({
   bonusBall1,
   powerBall,
   drawNum
-}: IBallJson): IDrawItem => ({
+}: ILottoDataJson): IDrawItem => ({
   drawNum,
   balls: [
     [position1, getBallColor(position1)],
@@ -183,7 +206,7 @@ interface IDrawShell {
   segment: IDrawData;
 }
 
-export const createDrawData = (table: IBallJson[]): IDrawData[] => {
+export const createDrawData = (table: ILottoDataJson[]): IDrawData[] => {
   const itemsPerCard = 50;
   const shell = {
     segments: [],

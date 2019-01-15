@@ -1,8 +1,8 @@
 import { combineReducers } from "redux";
 import select from "./select";
-// import todos from "./todos";
+import lottoData from "./lottoData";
 
 export default combineReducers({
-  // todos,
+  lottoData,
   select
 });

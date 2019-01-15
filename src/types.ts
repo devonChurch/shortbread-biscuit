@@ -1,5 +1,11 @@
 import { string, number } from "prop-types";
 
+export interface IReduxLottoDataState {
+  lottoDataAll: ILottoDataJson[];
+  lottoDataOldestDate: number;
+  lottoDataNewestDate: number;
+}
+
 export interface IReduxSelectState {
   currentBalls: number[];
 }
@@ -9,6 +15,10 @@ export interface IReduxCompleteState {
 }
 
 export enum EReduxActions {
+  LOTTO_DATA_FETCH = "LOTTO_DATA_FETCH",
+  LOTTO_DATA_SAVE_ALL = "LOTTO_DATA_SAVE_ALL",
+  LOTTO_DATA_UPDATE = "LOTTO_DATA_UPDATE",
+  //
   SELECT_TOGGLE = "SELECT_TOGGLE",
   SELECT_CLEAR = "SELECT_CLEAR"
 }
@@ -24,7 +34,7 @@ export interface IBallData {
   frequencies: TBallFrequency[];
 }
 
-export interface IBallCsv {
+export interface ILottoDataCsv {
   1: string;
   2: string;
   3: string;
@@ -38,7 +48,7 @@ export interface IBallCsv {
   "Draw Date": string;
 }
 
-export interface IBallJson {
+export interface ILottoDataJson {
   position1: number;
   position2: number;
   position3: number;
@@ -53,7 +63,7 @@ export interface IBallJson {
   drawTime: number;
 }
 
-export enum EBallKeys {
+export enum ELottoJsonKeys {
   position1 = "position1",
   position2 = "position2",
   position3 = "position3",

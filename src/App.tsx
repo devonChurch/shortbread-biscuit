@@ -1,17 +1,17 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import axios from "axios";
+// import axios from "axios";
 import csvToJson from "csvtojson";
 import moment from "moment";
 import { Row, Col } from "antd";
 import {
   IReduxCompleteState,
   IBallData,
-  IBallJson,
+  ILottoDataJson,
   IComboData,
   IDrawData
 } from "./types";
-import { selectToggle, selectClear } from "./redux/actions";
+import { lottoDataFetch, selectToggle, selectClear } from "./redux/actions";
 import { colors, dateFormat } from "./statics";
 import {
   setToFromDate,
@@ -31,7 +31,7 @@ import ContentProgress from "./ContentProgress";
 interface IAppState {
   // Raw data.
   isLoading: boolean;
-  jsonAll: IBallJson[];
+  jsonAll: ILottoDataJson[];
 
   // UI.
   workerPercent: number;
@@ -46,11 +46,12 @@ interface IAppState {
   dateRangeMax: number; // Milliseconds.
   fromDate: number; //     Milliseconds.
   toDate: number; //       Milliseconds.
-  jsonSlice: IBallJson[];
+  jsonSlice: ILottoDataJson[];
 }
 
 interface IAppProps {
   currentBalls: number[];
+  lottoDataFetch: () => void;
   selectToggle: (ballNum: number) => void;
   selectClear: () => void;
 }
@@ -77,7 +78,8 @@ class App extends Component<IAppProps, IAppState> {
     super(props);
     console.log(this);
     this.worker = Worker && new Worker("worker.js");
-    this.getData();
+    // this.getData();
+    this.props.lottoDataFetch();
   }
 
   checkShouldProgressUpdate = (() => {
@@ -125,42 +127,42 @@ class App extends Component<IAppProps, IAppState> {
     }
   }
 
-  getData = async () => {
-    const response = await axios({
-      method: "get",
-      url: "lotto-numbers.csv"
-    });
-    const { data: csv } = response;
-    const csvJson = await csvToJson().fromString(csv);
-    const enrichedJson = enrichJsonData(csvJson);
-    const jsonAll = enrichedJson;
-    const dateRangeMin = enrichedJson.slice(-1)[0].drawTime;
-    const fromDate = new Date("01/06/2018").getTime();
-    const dateRangeMax = enrichedJson[0].drawTime;
-    const toDate = dateRangeMax;
-    const { ballData, powerData, jsonSlice } = setToFromDate(
-      jsonAll,
-      fromDate,
-      toDate
-    );
-    console.log(jsonSlice);
-    const drawData = createDrawData(jsonSlice);
+  // getData = async () => {
+  //   const response = await axios({
+  //     method: "get",
+  //     url: "lotto-numbers.csv"
+  //   });
+  //   const { data: csv } = response;
+  //   const csvJson = await csvToJson().fromString(csv);
+  //   const enrichedJson = enrichJsonData(csvJson);
+  //   const jsonAll = enrichedJson;
+  //   const dateRangeMin = enrichedJson.slice(-1)[0].drawTime;
+  //   const fromDate = new Date("01/06/2018").getTime();
+  //   const dateRangeMax = enrichedJson[0].drawTime;
+  //   const toDate = dateRangeMax;
+  //   const { ballData, powerData, jsonSlice } = setToFromDate(
+  //     jsonAll,
+  //     fromDate,
+  //     toDate
+  //   );
+  //   console.log(jsonSlice);
+  //   const drawData = createDrawData(jsonSlice);
 
-    Worker && this.worker.postMessage({ json: jsonSlice });
-    this.setState(prevState => ({
-      ...prevState,
-      isLoading: false,
-      jsonAll,
-      jsonSlice,
-      dateRangeMin,
-      dateRangeMax,
-      fromDate,
-      toDate,
-      ballData,
-      powerData,
-      drawData
-    }));
-  };
+  //   Worker && this.worker.postMessage({ json: jsonSlice });
+  //   this.setState(prevState => ({
+  //     ...prevState,
+  //     isLoading: false,
+  //     jsonAll,
+  //     jsonSlice,
+  //     dateRangeMin,
+  //     dateRangeMax,
+  //     fromDate,
+  //     toDate,
+  //     ballData,
+  //     powerData,
+  //     drawData
+  //   }));
+  // };
 
   checkIsCurrentBallActive = (ball: number): boolean => {
     const { currentBalls } = this.props;
@@ -378,7 +380,11 @@ const mapStateToProps = (state: IReduxCompleteState) => ({
   ...state.select
 });
 
+// const mapDispatchToProps = dispatch => ({
+//   increment: () => dispatch({ type: "INCREMENT" })
+// });
+
 export default connect(
   mapStateToProps,
-  { selectToggle, selectClear }
+  { lottoDataFetch, selectToggle, selectClear }
 )(App);
