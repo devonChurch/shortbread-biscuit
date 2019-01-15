@@ -1,5 +1,18 @@
 import { string, number } from "prop-types";
 
+export interface IReduxSelectState {
+  currentBalls: number[];
+}
+
+export interface IReduxCompleteState {
+  select: IReduxSelectState;
+}
+
+export enum EReduxActions {
+  SELECT_TOGGLE = "SELECT_TOGGLE",
+  SELECT_CLEAR = "SELECT_CLEAR"
+}
+
 export type TBallFrequency = [
   number, // Ball.
   number, // Frequency.

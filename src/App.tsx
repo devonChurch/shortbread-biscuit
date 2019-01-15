@@ -1,9 +1,17 @@
 import React, { Component } from "react";
+import { connect } from "react-redux";
 import axios from "axios";
 import csvToJson from "csvtojson";
 import moment from "moment";
 import { Row, Col } from "antd";
-import { IBallData, IBallJson, IComboData, IDrawData } from "./types";
+import {
+  IReduxCompleteState,
+  IBallData,
+  IBallJson,
+  IComboData,
+  IDrawData
+} from "./types";
+import { selectToggle, selectClear } from "./redux/actions";
 import { colors, dateFormat } from "./statics";
 import {
   setToFromDate,
@@ -21,22 +29,31 @@ import ContentSpinner from "./ContentSpinner";
 import ContentProgress from "./ContentProgress";
 
 interface IAppState {
+  // Raw data.
   isLoading: boolean;
+  jsonAll: IBallJson[];
+
+  // UI.
   workerPercent: number;
+
   ballData: IBallData[];
   powerData: IBallData[];
   comboData: IComboData[];
   drawData: IDrawData[];
-  currentBalls: number[];
+
+  // Time.
   dateRangeMin: number; // Milliseconds.
   dateRangeMax: number; // Milliseconds.
   fromDate: number; //     Milliseconds.
   toDate: number; //       Milliseconds.
-  jsonAll: IBallJson[];
   jsonSlice: IBallJson[];
 }
 
-interface IAppProps {}
+interface IAppProps {
+  currentBalls: number[];
+  selectToggle: (ballNum: number) => void;
+  selectClear: () => void;
+}
 
 class App extends Component<IAppProps, IAppState> {
   state: IAppState = {
@@ -46,7 +63,6 @@ class App extends Component<IAppProps, IAppState> {
     powerData: [],
     comboData: [],
     drawData: [],
-    currentBalls: [],
     dateRangeMin: 0,
     dateRangeMax: 0,
     fromDate: 0,
@@ -59,6 +75,7 @@ class App extends Component<IAppProps, IAppState> {
 
   constructor(props: IAppProps) {
     super(props);
+    console.log(this);
     this.worker = Worker && new Worker("worker.js");
     this.getData();
   }
@@ -145,27 +162,8 @@ class App extends Component<IAppProps, IAppState> {
     }));
   };
 
-  toggleCurrentBall = (newBall: number): void => {
-    this.setState(prevState => {
-      const { currentBalls: prevBalls } = prevState;
-      const isAlreadyActive = prevBalls.includes(newBall);
-      const currentBalls = isAlreadyActive
-        ? prevBalls.filter(prevBall => prevBall !== newBall)
-        : [...prevBalls, newBall];
-
-      return { ...prevState, currentBalls };
-    });
-  };
-
-  clearCurrentBalls = () => {
-    this.setState(prevState => ({
-      ...prevState,
-      currentBalls: []
-    }));
-  };
-
-  checkIsCurrentBall = (ball: number): boolean => {
-    const { currentBalls } = this.state;
+  checkIsCurrentBallActive = (ball: number): boolean => {
+    const { currentBalls } = this.props;
     const isEmpty = !currentBalls.length;
     const isActive = currentBalls.includes(ball);
 
@@ -213,9 +211,9 @@ class App extends Component<IAppProps, IAppState> {
       ballData,
       powerData,
       comboData,
-      drawData,
-      currentBalls
+      drawData
     } = this.state;
+    const { currentBalls, selectToggle, selectClear } = this.props;
     return (
       <div style={{ background: colors.bgLight, minHeight: "100vh" }}>
         <div
@@ -228,12 +226,10 @@ class App extends Component<IAppProps, IAppState> {
           <Row type="flex" gutter={16}>
             <Col span={24} xs={24} lg={24} xxl={12} style={{ margin: "8px 0" }}>
               <Select
-                handleToggle={this.toggleCurrentBall}
-                checkIsActive={this.checkIsCurrentBall}
+                handleToggle={selectToggle}
+                checkIsActive={this.checkIsCurrentBallActive}
                 handleClear={
-                  Boolean(currentBalls.length)
-                    ? this.clearCurrentBalls
-                    : undefined
+                  Boolean(currentBalls.length) ? selectClear : undefined
                 }
               />
             </Col>
@@ -277,8 +273,8 @@ class App extends Component<IAppProps, IAppState> {
                   <Statistic
                     title={title}
                     frequencies={frequencies}
-                    handleToggle={this.toggleCurrentBall}
-                    checkIsActive={this.checkIsCurrentBall}
+                    handleToggle={selectToggle}
+                    checkIsActive={this.checkIsCurrentBallActive}
                   />
                 </Col>
               ))
@@ -309,8 +305,8 @@ class App extends Component<IAppProps, IAppState> {
                   <Combinations
                     title={title}
                     combinations={combinations}
-                    handleToggle={this.toggleCurrentBall}
-                    checkIsActive={this.checkIsCurrentBall}
+                    handleToggle={selectToggle}
+                    checkIsActive={this.checkIsCurrentBallActive}
                   />
                 </Col>
               ))
@@ -365,8 +361,8 @@ class App extends Component<IAppProps, IAppState> {
                   <Draw
                     title={title}
                     draws={draws}
-                    handleToggle={this.toggleCurrentBall}
-                    checkIsActive={this.checkIsCurrentBall}
+                    handleToggle={selectToggle}
+                    checkIsActive={this.checkIsCurrentBallActive}
                   />
                 </Col>
               ))
@@ -378,4 +374,11 @@ class App extends Component<IAppProps, IAppState> {
   }
 }
 
-export default App;
+const mapStateToProps = (state: IReduxCompleteState) => ({
+  ...state.select
+});
+
+export default connect(
+  mapStateToProps,
+  { selectToggle, selectClear }
+)(App);
