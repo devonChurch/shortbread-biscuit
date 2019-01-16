@@ -1,9 +1,22 @@
-import { string, number } from "prop-types";
-
 export interface IReduxLottoDataState {
   lottoDataAll: ILottoDataJson[];
-  lottoDataOldestDate: number;
-  lottoDataNewestDate: number;
+  lottoDataTotalItems: number;
+  lottoDataOldestDate: number; // Milliseconds.
+  lottoDataNewestDate: number; // Milliseconds.
+  lottoDataIsFetching: boolean;
+}
+
+export interface IReduxRangeDataState {
+  rangeDataAll: ILottoDataJson[];
+  rangeDataTotalItems: number;
+  //
+  rangeDataBaseBalls: IBallData[];
+  rangeDataPowerBalls: IBallData[];
+  rangeDataCombinations: IComboData[];
+  rangeDataDraws: IDrawData[];
+  //
+  rangeDataOldest: number; // Milliseconds.
+  rangeDataNewest: number; // Milliseconds.
 }
 
 export interface IReduxSelectState {
@@ -11,13 +24,16 @@ export interface IReduxSelectState {
 }
 
 export interface IReduxCompleteState {
+  lottoData: IReduxLottoDataState;
+  rangeData: IReduxRangeDataState;
   select: IReduxSelectState;
 }
 
 export enum EReduxActions {
   LOTTO_DATA_FETCH = "LOTTO_DATA_FETCH",
   LOTTO_DATA_SAVE_ALL = "LOTTO_DATA_SAVE_ALL",
-  LOTTO_DATA_UPDATE = "LOTTO_DATA_UPDATE",
+  //
+  RANGE_DATA_CREATE = "RANGE_DATA_CREATE",
   //
   SELECT_TOGGLE = "SELECT_TOGGLE",
   SELECT_CLEAR = "SELECT_CLEAR"
@@ -26,7 +42,7 @@ export enum EReduxActions {
 export type TBallFrequency = [
   number, // Ball.
   number, // Frequency.
-  string // Color.
+  string //  Color.
 ];
 
 export interface IBallData {

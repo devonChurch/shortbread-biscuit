@@ -1,28 +1,28 @@
 import { call, put, takeEvery, takeLatest, select } from "redux-saga/effects";
 import { EReduxActions as actions } from "../types";
 import { fetchCsvData, convertLottoCsvDataToJson } from "../helpers";
+import { lottoDataSaveAll, rangeDataCreate } from "./actions";
 
 function* lottoDataFetch(action: {}) {
-  // console.log("saga", action);
-  // return [];
   try {
     const response = yield call(fetchCsvData);
     const lottoDataAll = yield convertLottoCsvDataToJson(response.data);
 
-    yield put({ type: "LOTTO_DATA_SAVE_ALL", payload: lottoDataAll });
-
-    const state = yield select();
-    console.log(state);
+    yield put(lottoDataSaveAll(lottoDataAll));
+    const {
+      lottoData: { lottoDataNewestDate }
+    } = yield select();
+    yield put(
+      rangeDataCreate({
+        lottoDataAll,
+        rangeDataOldest: new Date("01/06/2018").getTime(),
+        rangeDataNewest: lottoDataNewestDate
+      })
+    );
   } catch (error) {
     console.log("error", error);
     // yield put({ type: 'PRODUCTS_RECEIVED', products })
   }
-  //  try {
-  //     const user = yield call(Api.fetchUser, action.payload.userId);
-  //     yield put({type: "USER_FETCH_SUCCEEDED", user: user});
-  //  } catch (e) {
-  //     yield put({type: "USER_FETCH_FAILED", message: e.message});
-  //  }
 }
 
 function* sagas() {

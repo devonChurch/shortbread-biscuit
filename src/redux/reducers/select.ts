@@ -23,13 +23,13 @@ export default function(state: IState = initialState, action: IAction) {
         : [...prevBalls, toggledBall];
 
       return {
-        // ...state,
+        ...state,
         currentBalls: nextBalls
       };
     }
     case actions.SELECT_CLEAR: {
       return {
-        // ...state,
+        ...state,
         currentBalls: []
       };
     }

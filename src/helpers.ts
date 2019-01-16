@@ -73,10 +73,12 @@ export const getFrequencies = (
 
 export const sliceItemsByTime = (
   json: ILottoDataJson[],
-  fromDate: number,
-  toDate: number
+  rangeDataOldest: number,
+  rangeDataNewest: number
 ): ILottoDataJson[] =>
-  json.filter(({ drawTime }) => drawTime >= fromDate && drawTime <= toDate);
+  json.filter(
+    ({ drawTime }) => drawTime >= rangeDataOldest && drawTime <= rangeDataNewest
+  );
 
 export const enrichJsonData = (csvJson: ILottoDataCsv[]): ILottoDataJson[] =>
   csvJson.map(
@@ -123,16 +125,18 @@ export const extractDateBoundsFromLottoData = (
   newest: lottoData[0].drawTime
 });
 
-export const setToFromDate = (
+export const extractRangeDataFromLottoData = (
   jsonAll: ILottoDataJson[],
-  fromDate: number,
-  toDate: number
+  rangeDataOldest: number,
+  rangeDataNewest: number
 ): {
-  ballData: IBallData[];
-  powerData: IBallData[];
-  jsonSlice: ILottoDataJson[];
+  rangeData: ILottoDataJson[];
+  baseBalls: IBallData[];
+  powerBalls: IBallData[];
+  rangeDataDraws: IDrawData[];
 } => {
-  const jsonSlice = sliceItemsByTime(jsonAll, fromDate, toDate);
+  const rangeData = sliceItemsByTime(jsonAll, rangeDataOldest, rangeDataNewest);
+  const rangeDataDraws = createDrawData(rangeData);
   const {
     position1,
     position2,
@@ -144,32 +148,33 @@ export const setToFromDate = (
     powerBall
   } = ELottoJsonKeys;
   // prettier-ignore
-  const ballData = [
-    {title: 'Most Frequent', frequencies: getFrequencies(jsonSlice, [position1, position1, position2, position3, position4, position5, position6, bonusBall1], 40, getBallColor) },
-    {title: 'Ball One', frequencies: getFrequencies(jsonSlice, [position1], 40, getBallColor) },
-    {title: 'Ball Two', frequencies: getFrequencies(jsonSlice, [position2], 40, getBallColor) },
-    {title: 'Ball Three', frequencies: getFrequencies(jsonSlice, [position3], 40, getBallColor) },
-    {title: 'Ball Four', frequencies: getFrequencies(jsonSlice, [position4], 40, getBallColor) },
-    {title: 'Ball Five', frequencies: getFrequencies(jsonSlice, [position5], 40, getBallColor) },
-    {title: 'Ball Six', frequencies: getFrequencies(jsonSlice, [position6], 40, getBallColor) },
-    {title: 'Bonus Ball', frequencies: getFrequencies(jsonSlice, [bonusBall1], 40, getBallColor) },
+  const baseBalls = [
+    {title: 'Most Frequent', frequencies: getFrequencies(rangeData, [position1, position1, position2, position3, position4, position5, position6, bonusBall1], 40, getBallColor) },
+    {title: 'Ball One', frequencies: getFrequencies(rangeData, [position1], 40, getBallColor) },
+    {title: 'Ball Two', frequencies: getFrequencies(rangeData, [position2], 40, getBallColor) },
+    {title: 'Ball Three', frequencies: getFrequencies(rangeData, [position3], 40, getBallColor) },
+    {title: 'Ball Four', frequencies: getFrequencies(rangeData, [position4], 40, getBallColor) },
+    {title: 'Ball Five', frequencies: getFrequencies(rangeData, [position5], 40, getBallColor) },
+    {title: 'Ball Six', frequencies: getFrequencies(rangeData, [position6], 40, getBallColor) },
+    {title: 'Bonus Ball', frequencies: getFrequencies(rangeData, [bonusBall1], 40, getBallColor) },
   ];
   // prettier-ignore
-  const powerData = [
-    {title: 'Power Ball', frequencies: getFrequencies(jsonSlice, [powerBall], 10, () => 'blue') }
+  const powerBalls = [
+    {title: 'Power Ball', frequencies: getFrequencies(rangeData, [powerBall], 10, () => 'blue') }
   ];
 
   return {
-    ballData,
-    powerData,
-    jsonSlice
+    rangeData,
+    baseBalls,
+    powerBalls,
+    rangeDataDraws
   };
 };
 
 export const enrichCombinationsWithColor = (
-  comboData: IComboData[]
+  rangeDataCombinations: IComboData[]
 ): IComboData[] =>
-  comboData.map(({ title, combinations }) => ({
+  rangeDataCombinations.map(({ title, combinations }) => ({
     title,
     combinations: combinations.map(({ frequency, balls }) => ({
       frequency,

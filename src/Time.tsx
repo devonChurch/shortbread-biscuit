@@ -5,33 +5,36 @@ import { Card, DatePicker, Alert, Spin } from "antd";
 import { dateFormat } from "./statics";
 
 interface ITime {
-  dateRangeMin: number;
-  dateRangeMax: number;
-  fromDate: number;
-  toDate: number;
+  absoluteOldestDate: number;
+  absoluteNewestDate: number;
+  currentOldestDate: number;
+  currentNewestDate: number;
   handleChange: (_: any, fromToStrings: [string, string]) => void;
-  currentDraws: number;
-  totalDraws: number;
+  totalCurrentDraws: number;
+  totalPossibleDraws: number;
 }
 
 const Time: SFC<ITime> = ({
-  dateRangeMin,
-  dateRangeMax,
-  fromDate,
-  toDate,
+  absoluteOldestDate,
+  absoluteNewestDate,
+  currentOldestDate,
+  currentNewestDate,
   handleChange,
-  currentDraws,
-  totalDraws
+  totalCurrentDraws,
+  totalPossibleDraws
 }) => (
   <Card title="Time" style={{ height: "100%" }}>
-    {!Boolean(fromDate && toDate) ? (
+    {!Boolean(currentOldestDate && currentNewestDate) ? (
       <Spin size="large" />
     ) : (
       <div style={{ maxWidth: "560px" }}>
         <DatePicker.RangePicker
           style={{ width: "100%" }}
           size="large"
-          defaultValue={[moment(new Date(fromDate)), moment(new Date(toDate))]}
+          defaultValue={[
+            moment(new Date(currentOldestDate)),
+            moment(new Date(currentNewestDate))
+          ]}
           format={dateFormat}
           onChange={handleChange}
         />
@@ -41,12 +44,12 @@ const Time: SFC<ITime> = ({
           showIcon
           message={
             <span>
-              Showing <strong>{currentDraws}</strong> from a possible{" "}
-              <strong>{totalDraws}</strong> draws.
+              Showing <strong>{totalCurrentDraws}</strong> from a possible{" "}
+              <strong>{totalPossibleDraws}</strong> draws.
             </span>
           }
         />
-        {fromDate < dateRangeMin && (
+        {currentOldestDate < absoluteOldestDate && (
           <Alert
             style={{ margin: "18px 0 0" }}
             type="warning"
@@ -55,14 +58,14 @@ const Time: SFC<ITime> = ({
               <span>
                 The <strong>oldest</strong> <em>Lotto draw</em> record is{" "}
                 <strong>
-                  {moment(new Date(dateRangeMin)).format(dateFormat)}
+                  {moment(new Date(absoluteOldestDate)).format(dateFormat)}
                 </strong>
                 .
               </span>
             }
           />
         )}
-        {toDate > dateRangeMax && (
+        {currentNewestDate > absoluteNewestDate && (
           <Alert
             style={{ margin: "18px 0 0" }}
             type="warning"
@@ -71,7 +74,7 @@ const Time: SFC<ITime> = ({
               <span>
                 The <strong>latest</strong> <em>Lotto draw</em> record is{" "}
                 <strong>
-                  {moment(new Date(dateRangeMax)).format(dateFormat)}
+                  {moment(new Date(absoluteNewestDate)).format(dateFormat)}
                 </strong>
                 .
               </span>

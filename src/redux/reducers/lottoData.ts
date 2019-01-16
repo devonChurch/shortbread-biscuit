@@ -12,14 +12,17 @@ interface IAction {
 
 const initialState = {
   lottoDataAll: [],
+  lottoDataTotalItems: 0,
+  //
   lottoDataOldestDate: 0,
-  lottoDataNewestDate: 0
+  lottoDataNewestDate: 0,
+  //
+  lottoDataIsFetching: true
 };
 
 export default function(state: IState = initialState, action: IAction) {
   switch (action.type) {
     case actions.LOTTO_DATA_SAVE_ALL: {
-      console.log("lotto data action", action);
       const lottoDataAll = action.payload;
       const {
         oldest: lottoDataOldestDate,
@@ -28,8 +31,10 @@ export default function(state: IState = initialState, action: IAction) {
       return {
         ...state,
         lottoDataAll,
+        lottoDataTotalItems: lottoDataAll.length,
         lottoDataOldestDate,
-        lottoDataNewestDate
+        lottoDataNewestDate,
+        lottoDataIsFetching: false
       };
     }
     default:

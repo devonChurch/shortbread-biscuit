@@ -1,25 +1,25 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-// import axios from "axios";
-import csvToJson from "csvtojson";
 import moment from "moment";
 import { Row, Col } from "antd";
 import {
   IReduxCompleteState,
+  IReduxLottoDataState,
+  IReduxRangeDataState,
+  IReduxSelectState,
   IBallData,
   ILottoDataJson,
   IComboData,
   IDrawData
 } from "./types";
-import { lottoDataFetch, selectToggle, selectClear } from "./redux/actions";
-import { colors, dateFormat } from "./statics";
 import {
-  setToFromDate,
-  enrichJsonData,
-  enrichCombinationsWithColor,
-  getTimeNow,
-  createDrawData
-} from "./helpers";
+  lottoDataFetch,
+  rangeDataCreate,
+  selectToggle,
+  selectClear
+} from "./redux/actions";
+import { colors, dateFormat } from "./statics";
+import { getTimeNow } from "./helpers";
 import Select from "./Select";
 import Time from "./Time";
 import Statistic from "./Statistic";
@@ -28,57 +28,40 @@ import Combinations from "./Combinations";
 import ContentSpinner from "./ContentSpinner";
 import ContentProgress from "./ContentProgress";
 
-interface IAppState {
-  // Raw data.
-  isLoading: boolean;
-  jsonAll: ILottoDataJson[];
+interface IAppState {}
 
-  // UI.
-  workerPercent: number;
+interface IMapStateToProps
+  extends IReduxLottoDataState,
+    IReduxRangeDataState,
+    IReduxSelectState {}
 
-  ballData: IBallData[];
-  powerData: IBallData[];
-  comboData: IComboData[];
-  drawData: IDrawData[];
-
-  // Time.
-  dateRangeMin: number; // Milliseconds.
-  dateRangeMax: number; // Milliseconds.
-  fromDate: number; //     Milliseconds.
-  toDate: number; //       Milliseconds.
-  jsonSlice: ILottoDataJson[];
-}
-
-interface IAppProps {
-  currentBalls: number[];
+interface IMapDispatchToProps {
   lottoDataFetch: () => void;
+  rangeDataCreate: (
+    {
+      lottoDataAll,
+      rangeDataOldest,
+      rangeDataNewest
+    }: {
+      lottoDataAll: ILottoDataJson[];
+      rangeDataOldest: number;
+      rangeDataNewest: number;
+    }
+  ) => void;
   selectToggle: (ballNum: number) => void;
   selectClear: () => void;
 }
 
-class App extends Component<IAppProps, IAppState> {
-  state: IAppState = {
-    isLoading: true,
-    workerPercent: 0,
-    ballData: [],
-    powerData: [],
-    comboData: [],
-    drawData: [],
-    dateRangeMin: 0,
-    dateRangeMax: 0,
-    fromDate: 0,
-    toDate: 0,
-    jsonAll: [],
-    jsonSlice: []
-  };
+interface IAppProps extends IMapStateToProps, IMapDispatchToProps {}
 
+class App extends Component<IAppProps, IAppState> {
+  state: IAppState = {};
   worker: Worker;
 
   constructor(props: IAppProps) {
     super(props);
     console.log(this);
     this.worker = Worker && new Worker("worker.js");
-    // this.getData();
     this.props.lottoDataFetch();
   }
 
@@ -99,70 +82,32 @@ class App extends Component<IAppProps, IAppState> {
   })();
 
   componentDidMount() {
-    if (Worker) {
-      this.worker.onmessage = event => {
-        const { isComplete, combinations, progress } = event.data;
-
-        if (isComplete) {
-          this.setState(prevState => ({
-            ...prevState,
-            workerPercent: 99
-          }));
-          setTimeout(() => {
-            this.setState(prevState => ({
-              ...prevState,
-              workerPercent: 100,
-              comboData: enrichCombinationsWithColor(combinations)
-            }));
-          }, 500);
-        } else if (this.checkShouldProgressUpdate()) {
-          this.setState(prevState => ({
-            ...prevState,
-            workerPercent: Math.round(
-              (progress / prevState.jsonSlice.length) * 100
-            )
-          }));
-        }
-      };
-    }
+    // if (Worker) {
+    //   this.worker.onmessage = event => {
+    //     const { isComplete, combinations, progress } = event.data;
+    //     if (isComplete) {
+    //       this.setState(prevState => ({
+    //         ...prevState,
+    //         workerPercent: 99
+    //       }));
+    //       setTimeout(() => {
+    //         this.setState(prevState => ({
+    //           ...prevState,
+    //           workerPercent: 100,
+    //           rangeDataCombinations: enrichCombinationsWithColor(combinations)
+    //         }));
+    //       }, 500);
+    //     } else if (this.checkShouldProgressUpdate()) {
+    //       this.setState(prevState => ({
+    //         ...prevState,
+    //         workerPercent: Math.round(
+    //           (progress / prevState.rangeDataAll.length) * 100
+    //         )
+    //       }));
+    //     }
+    //   };
+    // }
   }
-
-  // getData = async () => {
-  //   const response = await axios({
-  //     method: "get",
-  //     url: "lotto-numbers.csv"
-  //   });
-  //   const { data: csv } = response;
-  //   const csvJson = await csvToJson().fromString(csv);
-  //   const enrichedJson = enrichJsonData(csvJson);
-  //   const jsonAll = enrichedJson;
-  //   const dateRangeMin = enrichedJson.slice(-1)[0].drawTime;
-  //   const fromDate = new Date("01/06/2018").getTime();
-  //   const dateRangeMax = enrichedJson[0].drawTime;
-  //   const toDate = dateRangeMax;
-  //   const { ballData, powerData, jsonSlice } = setToFromDate(
-  //     jsonAll,
-  //     fromDate,
-  //     toDate
-  //   );
-  //   console.log(jsonSlice);
-  //   const drawData = createDrawData(jsonSlice);
-
-  //   Worker && this.worker.postMessage({ json: jsonSlice });
-  //   this.setState(prevState => ({
-  //     ...prevState,
-  //     isLoading: false,
-  //     jsonAll,
-  //     jsonSlice,
-  //     dateRangeMin,
-  //     dateRangeMax,
-  //     fromDate,
-  //     toDate,
-  //     ballData,
-  //     powerData,
-  //     drawData
-  //   }));
-  // };
 
   checkIsCurrentBallActive = (ball: number): boolean => {
     const { currentBalls } = this.props;
@@ -172,50 +117,38 @@ class App extends Component<IAppProps, IAppState> {
     return isEmpty || isActive;
   };
 
-  updateFromToDates = (_: any, [fromString, toString]: [string, string]) => {
-    this.setState(prevState => ({
-      ...prevState,
-      workerPercent: 0
-    }));
-
-    const { jsonAll } = this.state;
-    const fromDate = moment(fromString, dateFormat).valueOf();
-    const toDate = moment(toString, dateFormat).valueOf();
-    const { ballData, powerData, jsonSlice } = setToFromDate(
-      jsonAll,
-      fromDate,
-      toDate
-    );
-    const drawData = createDrawData(jsonSlice);
-
-    Worker && this.worker.postMessage({ json: jsonSlice });
-    this.setState(prevState => ({
-      ...prevState,
-      jsonSlice,
-      fromDate,
-      toDate,
-      ballData,
-      powerData,
-      drawData
-    }));
+  updateFromToDates = (
+    _: any,
+    [oldestString, newestString]: [string, string]
+  ) => {
+    this.props.rangeDataCreate({
+      lottoDataAll: this.props.lottoDataAll,
+      rangeDataOldest: moment(oldestString, dateFormat).valueOf(),
+      rangeDataNewest: moment(newestString, dateFormat).valueOf()
+    });
   };
 
   render() {
     const {
-      isLoading,
-      workerPercent,
-      dateRangeMin,
-      dateRangeMax,
-      fromDate,
-      toDate,
-      jsonAll,
-      jsonSlice,
-      ballData,
-      powerData,
-      comboData,
-      drawData
-    } = this.state;
-    const { currentBalls, selectToggle, selectClear } = this.props;
+      lottoDataTotalItems,
+      lottoDataOldestDate,
+      lottoDataNewestDate,
+      lottoDataIsFetching,
+      //
+      rangeDataTotalItems,
+      rangeDataBaseBalls,
+      rangeDataPowerBalls,
+      rangeDataCombinations,
+      rangeDataDraws,
+      rangeDataOldest,
+      rangeDataNewest,
+      //
+      currentBalls,
+      //
+      selectToggle,
+      selectClear
+    } = this.props;
+    const workerPercent = 50;
     return (
       <div style={{ background: colors.bgLight, minHeight: "100vh" }}>
         <div
@@ -238,13 +171,13 @@ class App extends Component<IAppProps, IAppState> {
 
             <Col span={24} xs={24} lg={24} xxl={12} style={{ margin: "8px 0" }}>
               <Time
-                dateRangeMin={dateRangeMin}
-                dateRangeMax={dateRangeMax}
-                fromDate={fromDate}
-                toDate={toDate}
+                absoluteOldestDate={lottoDataOldestDate}
+                absoluteNewestDate={lottoDataNewestDate}
+                currentOldestDate={rangeDataOldest}
+                currentNewestDate={rangeDataNewest}
                 handleChange={this.updateFromToDates}
-                currentDraws={jsonSlice.length}
-                totalDraws={jsonAll.length}
+                totalCurrentDraws={rangeDataTotalItems}
+                totalPossibleDraws={lottoDataTotalItems}
               />
             </Col>
           </Row>
@@ -260,10 +193,10 @@ class App extends Component<IAppProps, IAppState> {
                 during the <strong>draw order</strong>?
               </p>
             </Col>
-            {isLoading ? (
+            {lottoDataIsFetching ? (
               <ContentSpinner />
             ) : (
-              ballData.map(({ title, frequencies }: IBallData) => (
+              rangeDataBaseBalls.map(({ title, frequencies }: IBallData) => (
                 <Col
                   key={title}
                   span={12}
@@ -290,28 +223,30 @@ class App extends Component<IAppProps, IAppState> {
                 <strong>ball values</strong>.
               </p>
             </Col>
-            {isLoading ? (
+            {lottoDataIsFetching ? (
               <ContentSpinner />
             ) : workerPercent < 100 ? (
               <ContentProgress percent={workerPercent} />
             ) : (
-              comboData.map(({ title, combinations }: IComboData) => (
-                <Col
-                  key={title}
-                  span={24}
-                  xs={24}
-                  lg={12}
-                  xxl={6}
-                  style={{ margin: "8px 0" }}
-                >
-                  <Combinations
-                    title={title}
-                    combinations={combinations}
-                    handleToggle={selectToggle}
-                    checkIsActive={this.checkIsCurrentBallActive}
-                  />
-                </Col>
-              ))
+              rangeDataCombinations.map(
+                ({ title, combinations }: IComboData) => (
+                  <Col
+                    key={title}
+                    span={24}
+                    xs={24}
+                    lg={12}
+                    xxl={6}
+                    style={{ margin: "8px 0" }}
+                  >
+                    <Combinations
+                      title={title}
+                      combinations={combinations}
+                      handleToggle={selectToggle}
+                      checkIsActive={this.checkIsCurrentBallActive}
+                    />
+                  </Col>
+                )
+              )
             )}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Power Ball</h2>
@@ -321,10 +256,10 @@ class App extends Component<IAppProps, IAppState> {
                 <strong>generic</strong> <em>Lotto Ball</em> references above.
               </p>
             </Col>
-            {isLoading ? (
+            {lottoDataIsFetching ? (
               <ContentSpinner />
             ) : (
-              powerData.map(({ title, frequencies }: IBallData) => (
+              rangeDataPowerBalls.map(({ title, frequencies }: IBallData) => (
                 <Col
                   key={title}
                   span={12}
@@ -348,16 +283,16 @@ class App extends Component<IAppProps, IAppState> {
                 .
               </p>
             </Col>
-            {isLoading ? (
+            {lottoDataIsFetching ? (
               <ContentSpinner />
             ) : (
-              drawData.map(({ title, draws }: IDrawData) => (
+              rangeDataDraws.map(({ title, draws }: IDrawData) => (
                 <Col
                   key={title}
                   span={24}
                   xs={24}
                   lg={12}
-                  xxl={6}
+                  xxl={8}
                   style={{ margin: "8px 0" }}
                 >
                   <Draw
@@ -376,15 +311,26 @@ class App extends Component<IAppProps, IAppState> {
   }
 }
 
-const mapStateToProps = (state: IReduxCompleteState) => ({
+const mapStateToProps = (state: IReduxCompleteState): IMapStateToProps => ({
+  ...state.lottoData,
+  ...state.rangeData,
   ...state.select
 });
 
-// const mapDispatchToProps = dispatch => ({
-//   increment: () => dispatch({ type: "INCREMENT" })
+// const mapDispatchToProps = (dispatch: any): IMapDispatchToProps => ({
+//   lottoDataFetch: (...args) => dispatch(lottoDataFetch(...args)),
+//   selectToggle: (...args) => dispatch(selectToggle(...args)),
+//   selectClear: (...args) => dispatch(selectClear(...args))
 // });
 
+const mapDispatchToProps = {
+  lottoDataFetch,
+  rangeDataCreate,
+  selectToggle,
+  selectClear
+};
+
 export default connect(
-  mapStateToProps,
-  { lottoDataFetch, selectToggle, selectClear }
+  mapStateToProps, // as () => IMapStateToProps,
+  mapDispatchToProps // as () => IMapDispatchToProps
 )(App);
