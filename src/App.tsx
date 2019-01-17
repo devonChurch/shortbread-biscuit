@@ -6,6 +6,7 @@ import {
   IReduxCompleteState,
   IReduxLottoDataState,
   IReduxRangeDataState,
+  IReduxCombinationsState,
   IReduxSelectState,
   IBallData,
   ILottoDataJson,
@@ -14,35 +15,31 @@ import {
 } from "./types";
 import {
   lottoDataFetch,
-  rangeDataCreate,
+  rangeDataUpdateBase,
   selectToggle,
-  selectClear
+  selectClear,
+  combinationsCalculate
 } from "./redux/actions";
 import { colors, dateFormat } from "./statics";
-import { getTimeNow } from "./helpers";
 import Select from "./Select";
 import Time from "./Time";
 import Statistic from "./Statistic";
 import Draw from "./Draw";
 import Combinations from "./Combinations";
 import ContentSpinner from "./ContentSpinner";
-import ContentProgress from "./ContentProgress";
 
 interface IAppState {}
 
 interface IMapStateToProps
   extends IReduxLottoDataState,
     IReduxRangeDataState,
+    IReduxCombinationsState,
     IReduxSelectState {}
 
 interface IMapDispatchToProps {
   lottoDataFetch: () => void;
-  rangeDataCreate: (
-    {
-      lottoDataAll,
-      rangeDataOldest,
-      rangeDataNewest
-    }: {
+  rangeDataUpdateBase: (
+    args: {
       lottoDataAll: ILottoDataJson[];
       rangeDataOldest: number;
       rangeDataNewest: number;
@@ -50,63 +47,20 @@ interface IMapDispatchToProps {
   ) => void;
   selectToggle: (ballNum: number) => void;
   selectClear: () => void;
+  combinationsCalculate: () => void;
 }
 
 interface IAppProps extends IMapStateToProps, IMapDispatchToProps {}
 
 class App extends Component<IAppProps, IAppState> {
   state: IAppState = {};
-  worker: Worker;
 
   constructor(props: IAppProps) {
     super(props);
-    console.log(this);
-    this.worker = Worker && new Worker("worker.js");
-    this.props.lottoDataFetch();
   }
 
-  checkShouldProgressUpdate = (() => {
-    let prevUpdate = getTimeNow();
-
-    return () => {
-      const currentUpdate = getTimeNow();
-      const nextUpdate = prevUpdate + 500;
-      const shouldUpdate = currentUpdate > nextUpdate;
-
-      if (shouldUpdate) {
-        prevUpdate = currentUpdate;
-      }
-
-      return shouldUpdate;
-    };
-  })();
-
   componentDidMount() {
-    // if (Worker) {
-    //   this.worker.onmessage = event => {
-    //     const { isComplete, combinations, progress } = event.data;
-    //     if (isComplete) {
-    //       this.setState(prevState => ({
-    //         ...prevState,
-    //         workerPercent: 99
-    //       }));
-    //       setTimeout(() => {
-    //         this.setState(prevState => ({
-    //           ...prevState,
-    //           workerPercent: 100,
-    //           rangeDataCombinations: enrichCombinationsWithColor(combinations)
-    //         }));
-    //       }, 500);
-    //     } else if (this.checkShouldProgressUpdate()) {
-    //       this.setState(prevState => ({
-    //         ...prevState,
-    //         workerPercent: Math.round(
-    //           (progress / prevState.rangeDataAll.length) * 100
-    //         )
-    //       }));
-    //     }
-    //   };
-    // }
+    this.props.lottoDataFetch();
   }
 
   checkIsCurrentBallActive = (ball: number): boolean => {
@@ -121,11 +75,12 @@ class App extends Component<IAppProps, IAppState> {
     _: any,
     [oldestString, newestString]: [string, string]
   ) => {
-    this.props.rangeDataCreate({
+    this.props.rangeDataUpdateBase({
       lottoDataAll: this.props.lottoDataAll,
       rangeDataOldest: moment(oldestString, dateFormat).valueOf(),
       rangeDataNewest: moment(newestString, dateFormat).valueOf()
     });
+    this.props.combinationsCalculate();
   };
 
   render() {
@@ -138,7 +93,6 @@ class App extends Component<IAppProps, IAppState> {
       rangeDataTotalItems,
       rangeDataBaseBalls,
       rangeDataPowerBalls,
-      rangeDataCombinations,
       rangeDataDraws,
       rangeDataOldest,
       rangeDataNewest,
@@ -146,9 +100,10 @@ class App extends Component<IAppProps, IAppState> {
       currentBalls,
       //
       selectToggle,
-      selectClear
+      selectClear,
+      //
+      combinationsData
     } = this.props;
-    const workerPercent = 50;
     return (
       <div style={{ background: colors.bgLight, minHeight: "100vh" }}>
         <div
@@ -225,28 +180,24 @@ class App extends Component<IAppProps, IAppState> {
             </Col>
             {lottoDataIsFetching ? (
               <ContentSpinner />
-            ) : workerPercent < 100 ? (
-              <ContentProgress percent={workerPercent} />
             ) : (
-              rangeDataCombinations.map(
-                ({ title, combinations }: IComboData) => (
-                  <Col
-                    key={title}
-                    span={24}
-                    xs={24}
-                    lg={12}
-                    xxl={6}
-                    style={{ margin: "8px 0" }}
-                  >
-                    <Combinations
-                      title={title}
-                      combinations={combinations}
-                      handleToggle={selectToggle}
-                      checkIsActive={this.checkIsCurrentBallActive}
-                    />
-                  </Col>
-                )
-              )
+              combinationsData.map(({ title, combinations }: IComboData) => (
+                <Col
+                  key={title}
+                  span={24}
+                  xs={24}
+                  lg={12}
+                  xxl={6}
+                  style={{ margin: "8px 0" }}
+                >
+                  <Combinations
+                    title={title}
+                    combinations={combinations}
+                    handleToggle={selectToggle}
+                    checkIsActive={this.checkIsCurrentBallActive}
+                  />
+                </Col>
+              ))
             )}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Power Ball</h2>
@@ -314,6 +265,7 @@ class App extends Component<IAppProps, IAppState> {
 const mapStateToProps = (state: IReduxCompleteState): IMapStateToProps => ({
   ...state.lottoData,
   ...state.rangeData,
+  ...state.combinations,
   ...state.select
 });
 
@@ -325,9 +277,10 @@ const mapStateToProps = (state: IReduxCompleteState): IMapStateToProps => ({
 
 const mapDispatchToProps = {
   lottoDataFetch,
-  rangeDataCreate,
+  rangeDataUpdateBase,
   selectToggle,
-  selectClear
+  selectClear,
+  combinationsCalculate
 };
 
 export default connect(

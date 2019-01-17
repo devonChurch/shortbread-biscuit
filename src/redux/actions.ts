@@ -1,5 +1,4 @@
-import { EReduxActions as actions, ILottoDataJson } from "../types";
-import { enrichJsonData } from "../helpers";
+import { EReduxActions as actions, ILottoDataJson, IComboData } from "../types";
 
 export const lottoDataFetch = () => ({
   type: actions.LOTTO_DATA_FETCH
@@ -10,7 +9,7 @@ export const lottoDataSaveAll = (lottoDataAll: ILottoDataJson[]) => ({
   payload: lottoDataAll
 });
 
-export const rangeDataCreate = ({
+export const rangeDataUpdateBase = ({
   lottoDataAll,
   rangeDataOldest,
   rangeDataNewest
@@ -19,8 +18,17 @@ export const rangeDataCreate = ({
   rangeDataOldest: number;
   rangeDataNewest: number;
 }) => ({
-  type: actions.RANGE_DATA_CREATE,
+  type: actions.RANGE_DATA_UPDATE,
   payload: { lottoDataAll, rangeDataOldest, rangeDataNewest }
+});
+
+export const combinationsCalculate = () => ({
+  type: actions.COMBINATIONS_CALCULATE
+});
+
+export const combinationsUpdate = (combinationsData: IComboData[]) => ({
+  type: actions.COMBINATIONS_UPDATE,
+  payload: combinationsData
 });
 
 export const selectToggle = (ballNum: number) => ({
@@ -30,5 +38,4 @@ export const selectToggle = (ballNum: number) => ({
 
 export const selectClear = () => ({
   type: actions.SELECT_CLEAR
-  // payload: 0
 });

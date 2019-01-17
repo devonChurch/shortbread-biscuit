@@ -143,8 +143,7 @@ const enrichWithColor = data =>
   }));
 
 onmessage = function(event) {
-  const { json } = event.data;
-  const prepped = prepareComboData(json);
+  const prepped = prepareComboData(event.data);
   const compareRows = createRowComparison();
   const matches = compareTable(prepped, compareRows);
   const frequencies = getFrequency(matches);
@@ -157,4 +156,6 @@ onmessage = function(event) {
     isComplete: true,
     combinations: colors
   });
+
+  close();
 };

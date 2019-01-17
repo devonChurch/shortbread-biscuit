@@ -1,9 +1,18 @@
-import { call, put, takeEvery, takeLatest, select } from "redux-saga/effects";
-import { EReduxActions as actions } from "../types";
-import { fetchCsvData, convertLottoCsvDataToJson } from "../helpers";
-import { lottoDataSaveAll, rangeDataCreate } from "./actions";
+import { call, put, takeLatest, select } from "redux-saga/effects";
+import { EReduxActions as actions, ILottoDataJson } from "../types";
+import {
+  fetchCsvData,
+  convertLottoCsvDataToJson,
+  createCombinationsWorkerSequence
+} from "../helpers";
+import {
+  lottoDataSaveAll,
+  rangeDataUpdateBase,
+  combinationsCalculate,
+  combinationsUpdate
+} from "./actions";
 
-function* lottoDataFetch(action: {}) {
+function* lottoDataAllFetchSaga(action: {}) {
   try {
     const response = yield call(fetchCsvData);
     const lottoDataAll = yield convertLottoCsvDataToJson(response.data);
@@ -13,20 +22,38 @@ function* lottoDataFetch(action: {}) {
       lottoData: { lottoDataNewestDate }
     } = yield select();
     yield put(
-      rangeDataCreate({
+      rangeDataUpdateBase({
         lottoDataAll,
         rangeDataOldest: new Date("01/06/2018").getTime(),
         rangeDataNewest: lottoDataNewestDate
       })
     );
+    const {
+      rangeData: { rangeDataAll }
+    } = yield select();
+    yield put(combinationsCalculate());
   } catch (error) {
     console.log("error", error);
-    // yield put({ type: 'PRODUCTS_RECEIVED', products })
+    // yield put({ type: 'HANDLE_ERROR', error })
+  }
+}
+
+function* combinationsCalculateSaga() {
+  try {
+    const {
+      rangeData: { rangeDataAll }
+    } = yield select();
+    const response = yield createCombinationsWorkerSequence(rangeDataAll);
+    yield put(combinationsUpdate(response));
+  } catch (error) {
+    console.log("error", error);
+    // yield put({ type: 'HANDLE_ERROR', error })
   }
 }
 
 function* sagas() {
-  yield takeLatest(actions.LOTTO_DATA_FETCH, lottoDataFetch);
+  yield takeLatest(actions.LOTTO_DATA_FETCH, lottoDataAllFetchSaga);
+  yield takeLatest(actions.COMBINATIONS_CALCULATE, combinationsCalculateSaga);
 }
 
 export default sagas;

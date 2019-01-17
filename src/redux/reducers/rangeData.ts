@@ -6,7 +6,7 @@ import {
 import { extractRangeDataFromLottoData } from "../../helpers";
 
 interface IAction {
-  type: actions.RANGE_DATA_CREATE;
+  type: actions.RANGE_DATA_UPDATE;
   payload: {
     lottoDataAll: ILottoDataJson[];
     rangeDataOldest: number; // Milliseconds.
@@ -20,7 +20,6 @@ const initialState = {
   //
   rangeDataBaseBalls: [],
   rangeDataPowerBalls: [],
-  rangeDataCombinations: [],
   rangeDataDraws: [],
   //
   rangeDataOldest: 0,
@@ -29,7 +28,7 @@ const initialState = {
 
 export default function(state: IState = initialState, action: IAction) {
   switch (action.type) {
-    case actions.RANGE_DATA_CREATE: {
+    case actions.RANGE_DATA_UPDATE: {
       const { lottoDataAll, rangeDataOldest, rangeDataNewest } = action.payload;
       const {
         rangeData: rangeDataAll,

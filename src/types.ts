@@ -1,8 +1,10 @@
 export interface IReduxLottoDataState {
   lottoDataAll: ILottoDataJson[];
   lottoDataTotalItems: number;
+  //
   lottoDataOldestDate: number; // Milliseconds.
   lottoDataNewestDate: number; // Milliseconds.
+  //
   lottoDataIsFetching: boolean;
 }
 
@@ -12,11 +14,14 @@ export interface IReduxRangeDataState {
   //
   rangeDataBaseBalls: IBallData[];
   rangeDataPowerBalls: IBallData[];
-  rangeDataCombinations: IComboData[];
   rangeDataDraws: IDrawData[];
   //
   rangeDataOldest: number; // Milliseconds.
   rangeDataNewest: number; // Milliseconds.
+}
+
+export interface IReduxCombinationsState {
+  combinationsData: IComboData[];
 }
 
 export interface IReduxSelectState {
@@ -26,6 +31,7 @@ export interface IReduxSelectState {
 export interface IReduxCompleteState {
   lottoData: IReduxLottoDataState;
   rangeData: IReduxRangeDataState;
+  combinations: IReduxCombinationsState;
   select: IReduxSelectState;
 }
 
@@ -33,10 +39,13 @@ export enum EReduxActions {
   LOTTO_DATA_FETCH = "LOTTO_DATA_FETCH",
   LOTTO_DATA_SAVE_ALL = "LOTTO_DATA_SAVE_ALL",
   //
-  RANGE_DATA_CREATE = "RANGE_DATA_CREATE",
+  RANGE_DATA_UPDATE = "RANGE_DATA_UPDATE",
   //
   SELECT_TOGGLE = "SELECT_TOGGLE",
-  SELECT_CLEAR = "SELECT_CLEAR"
+  SELECT_CLEAR = "SELECT_CLEAR",
+  //
+  COMBINATIONS_CALCULATE = "COMBINATIONS_CALCULATE",
+  COMBINATIONS_UPDATE = "COMBINATIONS_UPDATE"
 }
 
 export type TBallFrequency = [

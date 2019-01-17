@@ -1,5 +1,8 @@
+import React from "react";
+import { notification, Progress } from "antd";
 import axios from "axios";
 import csvToJson from "csvtojson";
+import throttle from "lodash.throttle";
 import {
   TBallFrequency,
   IBallData,
@@ -172,9 +175,9 @@ export const extractRangeDataFromLottoData = (
 };
 
 export const enrichCombinationsWithColor = (
-  rangeDataCombinations: IComboData[]
+  combinationsData: IComboData[]
 ): IComboData[] =>
-  rangeDataCombinations.map(({ title, combinations }) => ({
+  combinationsData.map(({ title, combinations }) => ({
     title,
     combinations: combinations.map(({ frequency, balls }) => ({
       frequency,
@@ -243,4 +246,39 @@ export const createDrawData = (table: ILottoDataJson[]): IDrawData[] => {
   );
 
   return segments;
+};
+
+const updateCombinationsNotification = (
+  progress: number,
+  duration: number = 0 // Seconds.
+) => {
+  notification.open({
+    key: "combinationsWorker",
+    message: "Calculating Lotto Ball Combinations",
+    description: <Progress percent={progress} status="active" />,
+    duration
+  });
+};
+
+export const createCombinationsWorkerSequence = (
+  rangeDataAll: ILottoDataJson[]
+) => {
+  updateCombinationsNotification(0);
+  const worker = new Worker("worker.js");
+  const throttled = throttle(updateCombinationsNotification, 500);
+  const calculation = new Promise(resolve => {
+    worker.onmessage = event => {
+      const { isComplete, combinations, progress } = event.data;
+      if (isComplete) {
+        throttled.cancel();
+        updateCombinationsNotification(99, 0.1);
+        resolve(enrichCombinationsWithColor(combinations));
+      } else {
+        throttled(progress);
+      }
+    };
+  });
+
+  worker.postMessage(rangeDataAll);
+  return calculation;
 };
