@@ -1,9 +1,10 @@
 import { call, put, takeLatest, select } from "redux-saga/effects";
-import { EReduxActions as actions, ILottoDataJson } from "../types";
+import { EReduxActions as actions } from "../types";
 import {
   fetchCsvData,
   convertLottoCsvDataToJson,
-  createCombinationsWorkerSequence
+  createCombinationsWorkerSequence,
+  createErrorNotification
 } from "../helpers";
 import {
   lottoDataSaveAll,
@@ -33,8 +34,7 @@ function* lottoDataAllFetchSaga(action: {}) {
     } = yield select();
     yield put(combinationsCalculate());
   } catch (error) {
-    console.log("error", error);
-    // yield put({ type: 'HANDLE_ERROR', error })
+    createErrorNotification();
   }
 }
 
@@ -46,8 +46,7 @@ function* combinationsCalculateSaga() {
     const response = yield createCombinationsWorkerSequence(rangeDataAll);
     yield put(combinationsUpdate(response));
   } catch (error) {
-    console.log("error", error);
-    // yield put({ type: 'HANDLE_ERROR', error })
+    createErrorNotification();
   }
 }
 

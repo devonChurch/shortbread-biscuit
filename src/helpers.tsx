@@ -282,3 +282,10 @@ export const createCombinationsWorkerSequence = (
   worker.postMessage(rangeDataAll);
   return calculation;
 };
+
+export const createErrorNotification = (
+  message: string = "Error!",
+  description: string = "Sorry, there has been an error. Please retry again."
+) => {
+  notification.error({ message, description });
+};
