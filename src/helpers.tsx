@@ -21,6 +21,9 @@ export const fetchCsvData = () =>
     url: "lotto-numbers.csv"
   });
 
+export const createArrayOfLength = (length: number) =>
+  new Array(length).fill(0);
+
 export const getTimeNow = () => new Date().getTime();
 
 export const createListFromTo = (from: number, to: number): number[] =>
@@ -271,7 +274,7 @@ export const createCombinationsWorkerSequence = (
       const { isComplete, combinations, progress } = event.data;
       if (isComplete) {
         throttled.cancel();
-        updateCombinationsNotification(99, 0.1);
+        updateCombinationsNotification(100, 0.1);
         resolve(enrichCombinationsWithColor(combinations));
       } else {
         throttled(progress);

@@ -22,6 +22,7 @@ export interface IReduxRangeDataState {
 
 export interface IReduxCombinationsState {
   combinationsData: IComboData[];
+  combinationsIsCalculating: boolean;
 }
 
 export interface IReduxSelectState {

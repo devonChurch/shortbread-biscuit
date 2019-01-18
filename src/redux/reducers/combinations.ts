@@ -5,12 +5,13 @@ import {
 } from "../../types";
 
 interface IAction {
-  type: actions.COMBINATIONS_UPDATE;
+  type: actions.COMBINATIONS_UPDATE | actions.COMBINATIONS_CALCULATE;
   payload: IComboData[];
 }
 
 const initialState = {
-  combinationsData: []
+  combinationsData: [],
+  combinationsIsCalculating: true
 };
 
 export default function(state: IState = initialState, action: IAction) {
@@ -18,7 +19,14 @@ export default function(state: IState = initialState, action: IAction) {
     case actions.COMBINATIONS_UPDATE: {
       return {
         ...state,
-        combinationsData: action.payload
+        combinationsData: action.payload,
+        combinationsIsCalculating: false
+      };
+    }
+    case actions.COMBINATIONS_CALCULATE: {
+      return {
+        ...state,
+        combinationsIsCalculating: true
       };
     }
     default:

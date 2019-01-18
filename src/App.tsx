@@ -20,13 +20,19 @@ import {
   selectClear,
   combinationsCalculate
 } from "./redux/actions";
+import { createArrayOfLength } from "./helpers";
 import { colors, dateFormat } from "./statics";
 import Select from "./Select";
 import Time from "./Time";
 import Statistic from "./Statistic";
 import Draw from "./Draw";
 import Combinations from "./Combinations";
-import ContentSpinner from "./ContentSpinner";
+import {
+  SkeletonBaseBalls,
+  SkeletonCombinations,
+  SkeletonPowerBalls,
+  SkeletonDraws
+} from "./Skeleton";
 
 interface IAppState {}
 
@@ -102,7 +108,8 @@ class App extends Component<IAppProps, IAppState> {
       selectToggle,
       selectClear,
       //
-      combinationsData
+      combinationsData,
+      combinationsIsCalculating
     } = this.props;
     return (
       <div style={{ background: colors.bgLight, minHeight: "100vh" }}>
@@ -133,6 +140,7 @@ class App extends Component<IAppProps, IAppState> {
                 handleChange={this.updateFromToDates}
                 totalCurrentDraws={rangeDataTotalItems}
                 totalPossibleDraws={lottoDataTotalItems}
+                isLoading={lottoDataIsFetching}
               />
             </Col>
           </Row>
@@ -148,27 +156,30 @@ class App extends Component<IAppProps, IAppState> {
                 during the <strong>draw order</strong>?
               </p>
             </Col>
-            {lottoDataIsFetching ? (
-              <ContentSpinner />
-            ) : (
-              rangeDataBaseBalls.map(({ title, frequencies }: IBallData) => (
-                <Col
-                  key={title}
-                  span={12}
-                  xs={8}
-                  lg={6}
-                  xxl={3}
-                  style={{ margin: "8px 0" }}
-                >
+            {(lottoDataIsFetching
+              ? createArrayOfLength(6)
+              : rangeDataBaseBalls
+            ).map(({ title, frequencies }: IBallData, index) => (
+              <Col
+                key={title || index}
+                span={12}
+                xs={8}
+                lg={6}
+                xxl={3}
+                style={{ margin: "8px 0" }}
+              >
+                {lottoDataIsFetching ? (
+                  <SkeletonBaseBalls />
+                ) : (
                   <Statistic
                     title={title}
                     frequencies={frequencies}
                     handleToggle={selectToggle}
                     checkIsActive={this.checkIsCurrentBallActive}
                   />
-                </Col>
-              ))
-            )}
+                )}
+              </Col>
+            ))}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Balls Combinations</h2>
               <p style={{ maxWidth: "900px" }}>
@@ -178,27 +189,30 @@ class App extends Component<IAppProps, IAppState> {
                 <strong>ball values</strong>.
               </p>
             </Col>
-            {lottoDataIsFetching ? (
-              <ContentSpinner />
-            ) : (
-              combinationsData.map(({ title, combinations }: IComboData) => (
-                <Col
-                  key={title}
-                  span={24}
-                  xs={24}
-                  lg={12}
-                  xxl={6}
-                  style={{ margin: "8px 0" }}
-                >
+            {(lottoDataIsFetching
+              ? createArrayOfLength(3)
+              : combinationsData
+            ).map(({ title, combinations }: IComboData, index) => (
+              <Col
+                key={title || index}
+                span={24}
+                xs={24}
+                lg={12}
+                xxl={6}
+                style={{ margin: "8px 0" }}
+              >
+                {lottoDataIsFetching || combinationsIsCalculating ? (
+                  <SkeletonCombinations />
+                ) : (
                   <Combinations
                     title={title}
                     combinations={combinations}
                     handleToggle={selectToggle}
                     checkIsActive={this.checkIsCurrentBallActive}
                   />
-                </Col>
-              ))
-            )}
+                )}
+              </Col>
+            ))}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Power Ball</h2>
               <p style={{ maxWidth: "900px" }}>
@@ -207,22 +221,25 @@ class App extends Component<IAppProps, IAppState> {
                 <strong>generic</strong> <em>Lotto Ball</em> references above.
               </p>
             </Col>
-            {lottoDataIsFetching ? (
-              <ContentSpinner />
-            ) : (
-              rangeDataPowerBalls.map(({ title, frequencies }: IBallData) => (
-                <Col
-                  key={title}
-                  span={12}
-                  xs={8}
-                  lg={6}
-                  xxl={4}
-                  style={{ margin: "8px 0" }}
-                >
+            {(lottoDataIsFetching
+              ? createArrayOfLength(1)
+              : rangeDataPowerBalls
+            ).map(({ title, frequencies }: IBallData, index) => (
+              <Col
+                key={title || index}
+                span={12}
+                xs={8}
+                lg={6}
+                xxl={4}
+                style={{ margin: "8px 0" }}
+              >
+                {lottoDataIsFetching ? (
+                  <SkeletonPowerBalls />
+                ) : (
                   <Statistic title={""} frequencies={frequencies} />
-                </Col>
-              ))
-            )}
+                )}
+              </Col>
+            ))}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Draws</h2>
               <p style={{ maxWidth: "900px" }}>
@@ -234,27 +251,30 @@ class App extends Component<IAppProps, IAppState> {
                 .
               </p>
             </Col>
-            {lottoDataIsFetching ? (
-              <ContentSpinner />
-            ) : (
-              rangeDataDraws.map(({ title, draws }: IDrawData) => (
-                <Col
-                  key={title}
-                  span={24}
-                  xs={24}
-                  lg={12}
-                  xxl={8}
-                  style={{ margin: "8px 0" }}
-                >
+            {(lottoDataIsFetching
+              ? createArrayOfLength(3)
+              : rangeDataDraws
+            ).map(({ title, draws }: IDrawData, index) => (
+              <Col
+                key={title || index}
+                span={24}
+                xs={24}
+                lg={12}
+                xxl={8}
+                style={{ margin: "8px 0" }}
+              >
+                {lottoDataIsFetching ? (
+                  <SkeletonDraws />
+                ) : (
                   <Draw
                     title={title}
                     draws={draws}
                     handleToggle={selectToggle}
                     checkIsActive={this.checkIsCurrentBallActive}
                   />
-                </Col>
-              ))
-            )}
+                )}
+              </Col>
+            ))}
           </Row>
         </div>
       </div>
