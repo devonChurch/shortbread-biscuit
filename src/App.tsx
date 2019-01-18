@@ -157,7 +157,7 @@ class App extends Component<IAppProps, IAppState> {
               </p>
             </Col>
             {(lottoDataIsFetching
-              ? createArrayOfLength(6)
+              ? createArrayOfLength(8)
               : rangeDataBaseBalls
             ).map(({ title, frequencies }: IBallData, index) => (
               <Col
