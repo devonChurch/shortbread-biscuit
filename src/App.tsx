@@ -1,203 +1,116 @@
 import React, { Component } from "react";
-import axios from "axios";
-import csvToJson from "csvtojson";
+import { connect } from "react-redux";
 import moment from "moment";
 import { Row, Col } from "antd";
-import { IBallData, IBallJson, IComboData } from "./types";
-import { colors, dateFormat } from "./statics";
 import {
-  setToFromDate,
-  enrichJsonData,
-  enrichCombinationsWithColor,
-  getTimeNow
-} from "./helpers";
+  IReduxCompleteState,
+  IReduxLottoDataState,
+  IReduxRangeDataState,
+  IReduxCombinationsState,
+  IReduxSelectState,
+  IBallData,
+  ILottoDataJson,
+  IComboData,
+  IDrawData
+} from "./types";
+import {
+  lottoDataFetch,
+  rangeDataUpdateBase,
+  selectToggle,
+  selectClear,
+  combinationsCalculate
+} from "./redux/actions";
+import { createArrayOfLength } from "./helpers";
+import { colors, dateFormat } from "./statics";
 import Select from "./Select";
 import Time from "./Time";
 import Statistic from "./Statistic";
+import Draw from "./Draw";
 import Combinations from "./Combinations";
-import ContentSpinner from "./ContentSpinner";
-import ContentProgress from "./ContentProgress";
+import {
+  SkeletonBaseBalls,
+  SkeletonCombinations,
+  SkeletonPowerBalls,
+  SkeletonDraws
+} from "./Skeleton";
 
-interface IAppState {
-  isLoading: boolean;
-  workerPercent: number;
-  ballData: IBallData[];
-  powerData: IBallData[];
-  comboData: IComboData[];
-  currentBalls: number[];
-  dateRangeMin: number; // Milliseconds.
-  dateRangeMax: number; // Milliseconds.
-  fromDate: number; //     Milliseconds.
-  toDate: number; //       Milliseconds.
-  jsonAll: IBallJson[];
-  jsonSlice: IBallJson[];
+interface IAppState {}
+
+interface IMapStateToProps
+  extends IReduxLottoDataState,
+    IReduxRangeDataState,
+    IReduxCombinationsState,
+    IReduxSelectState {}
+
+interface IMapDispatchToProps {
+  lottoDataFetch: () => void;
+  rangeDataUpdateBase: (
+    args: {
+      lottoDataAll: ILottoDataJson[];
+      rangeDataOldest: number;
+      rangeDataNewest: number;
+    }
+  ) => void;
+  selectToggle: (ballNum: number) => void;
+  selectClear: () => void;
+  combinationsCalculate: () => void;
 }
 
-interface IAppProps {}
+interface IAppProps extends IMapStateToProps, IMapDispatchToProps {}
 
 class App extends Component<IAppProps, IAppState> {
-  state: IAppState = {
-    isLoading: true,
-    workerPercent: 0,
-    ballData: [],
-    powerData: [],
-    comboData: [],
-    currentBalls: [],
-    dateRangeMin: 0,
-    dateRangeMax: 0,
-    fromDate: 0,
-    toDate: 0,
-    jsonAll: [],
-    jsonSlice: []
-  };
-
-  worker: Worker;
+  state: IAppState = {};
 
   constructor(props: IAppProps) {
     super(props);
-    this.worker = Worker && new Worker("worker.js");
-    this.getData();
   }
-
-  checkShouldProgressUpdate = (() => {
-    let prevUpdate = getTimeNow();
-
-    return () => {
-      const currentUpdate = getTimeNow();
-      const nextUpdate = prevUpdate + 500;
-      const shouldUpdate = currentUpdate > nextUpdate;
-
-      if (shouldUpdate) {
-        prevUpdate = currentUpdate;
-      }
-
-      return shouldUpdate;
-    };
-  })();
 
   componentDidMount() {
-    if (Worker) {
-      this.worker.onmessage = event => {
-        const { isComplete, combinations, progress } = event.data;
-
-        if (isComplete) {
-          this.setState(prevState => ({
-            ...prevState,
-            workerPercent: 99
-          }));
-          setTimeout(() => {
-            this.setState(prevState => ({
-              ...prevState,
-              workerPercent: 100,
-              comboData: enrichCombinationsWithColor(combinations)
-            }));
-          }, 500);
-        } else if (this.checkShouldProgressUpdate()) {
-          this.setState(prevState => ({
-            ...prevState,
-            workerPercent: Math.round(
-              (progress / prevState.jsonSlice.length) * 100
-            )
-          }));
-        }
-      };
-    }
+    this.props.lottoDataFetch();
   }
 
-  getData = async () => {
-    const response = await axios({
-      method: "get",
-      url: "lotto-numbers.csv"
-    });
-    const { data: csv } = response;
-    const csvJson = await csvToJson().fromString(csv);
-    const enrichedJson = enrichJsonData(csvJson);
-    const jsonAll = enrichedJson;
-    const dateRangeMin = enrichedJson.slice(-1)[0].drawTime;
-    const fromDate = new Date("01/06/2017").getTime();
-    const dateRangeMax = enrichedJson[0].drawTime;
-    const toDate = dateRangeMax;
-    const { ballData, powerData, jsonSlice } = setToFromDate(
-      jsonAll,
-      fromDate,
-      toDate
-    );
-
-    Worker && this.worker.postMessage({ json: jsonSlice });
-    this.setState(prevState => ({
-      ...prevState,
-      isLoading: false,
-      jsonAll,
-      jsonSlice,
-      dateRangeMin,
-      dateRangeMax,
-      fromDate,
-      toDate,
-      ballData,
-      powerData
-    }));
-  };
-
-  toggleCurrentBall = (newBall: number): void => {
-    this.setState(prevState => {
-      const { currentBalls: prevBalls } = prevState;
-      const isAlreadyActive = prevBalls.includes(newBall);
-      const currentBalls = isAlreadyActive
-        ? prevBalls.filter(prevBall => prevBall !== newBall)
-        : [...prevBalls, newBall];
-
-      return { ...prevState, currentBalls };
-    });
-  };
-
-  checkIsCurrentBall = (ball: number): boolean => {
-    const { currentBalls } = this.state;
+  checkIsCurrentBallActive = (ball: number): boolean => {
+    const { currentBalls } = this.props;
     const isEmpty = !currentBalls.length;
     const isActive = currentBalls.includes(ball);
 
     return isEmpty || isActive;
   };
 
-  updateFromToDates = (_: any, [fromString, toString]: [string, string]) => {
-    this.setState(prevState => ({
-      ...prevState,
-      workerPercent: 0
-    }));
-
-    const { jsonAll } = this.state;
-    const fromDate = moment(fromString, dateFormat).valueOf();
-    const toDate = moment(toString, dateFormat).valueOf();
-    const { ballData, powerData, jsonSlice } = setToFromDate(
-      jsonAll,
-      fromDate,
-      toDate
-    );
-
-    Worker && this.worker.postMessage({ json: jsonSlice });
-    this.setState(prevState => ({
-      ...prevState,
-      jsonSlice,
-      fromDate,
-      toDate,
-      ballData,
-      powerData
-    }));
+  updateFromToDates = (
+    _: any,
+    [oldestString, newestString]: [string, string]
+  ) => {
+    this.props.rangeDataUpdateBase({
+      lottoDataAll: this.props.lottoDataAll,
+      rangeDataOldest: moment(oldestString, dateFormat).valueOf(),
+      rangeDataNewest: moment(newestString, dateFormat).valueOf()
+    });
+    this.props.combinationsCalculate();
   };
 
   render() {
     const {
-      isLoading,
-      workerPercent,
-      dateRangeMin,
-      dateRangeMax,
-      fromDate,
-      toDate,
-      jsonAll,
-      jsonSlice,
-      ballData,
-      powerData,
-      comboData
-    } = this.state;
+      lottoDataTotalItems,
+      lottoDataOldestDate,
+      lottoDataNewestDate,
+      lottoDataIsFetching,
+      //
+      rangeDataTotalItems,
+      rangeDataBaseBalls,
+      rangeDataPowerBalls,
+      rangeDataDraws,
+      rangeDataOldest,
+      rangeDataNewest,
+      //
+      currentBalls,
+      //
+      selectToggle,
+      selectClear,
+      //
+      combinationsData,
+      combinationsIsCalculating
+    } = this.props;
     return (
       <div style={{ background: colors.bgLight, minHeight: "100vh" }}>
         <div
@@ -210,20 +123,24 @@ class App extends Component<IAppProps, IAppState> {
           <Row type="flex" gutter={16}>
             <Col span={24} xs={24} lg={24} xxl={12} style={{ margin: "8px 0" }}>
               <Select
-                handleToggle={this.toggleCurrentBall}
-                checkIsActive={this.checkIsCurrentBall}
+                handleToggle={selectToggle}
+                checkIsActive={this.checkIsCurrentBallActive}
+                handleClear={
+                  Boolean(currentBalls.length) ? selectClear : undefined
+                }
               />
             </Col>
 
             <Col span={24} xs={24} lg={24} xxl={12} style={{ margin: "8px 0" }}>
               <Time
-                dateRangeMin={dateRangeMin}
-                dateRangeMax={dateRangeMax}
-                fromDate={fromDate}
-                toDate={toDate}
+                absoluteOldestDate={lottoDataOldestDate}
+                absoluteNewestDate={lottoDataNewestDate}
+                currentOldestDate={rangeDataOldest}
+                currentNewestDate={rangeDataNewest}
                 handleChange={this.updateFromToDates}
-                currentDraws={jsonSlice.length}
-                totalDraws={jsonAll.length}
+                totalCurrentDraws={rangeDataTotalItems}
+                totalPossibleDraws={lottoDataTotalItems}
+                isLoading={lottoDataIsFetching}
               />
             </Col>
           </Row>
@@ -239,27 +156,30 @@ class App extends Component<IAppProps, IAppState> {
                 during the <strong>draw order</strong>?
               </p>
             </Col>
-            {isLoading ? (
-              <ContentSpinner />
-            ) : (
-              ballData.map(({ title, frequencies }: IBallData) => (
-                <Col
-                  key={title}
-                  span={12}
-                  xs={8}
-                  lg={6}
-                  xxl={3}
-                  style={{ margin: "8px 0" }}
-                >
+            {(lottoDataIsFetching
+              ? createArrayOfLength(8)
+              : rangeDataBaseBalls
+            ).map(({ title, frequencies }: IBallData, index) => (
+              <Col
+                key={title || index}
+                span={12}
+                xs={8}
+                lg={6}
+                xxl={3}
+                style={{ margin: "8px 0" }}
+              >
+                {lottoDataIsFetching ? (
+                  <SkeletonBaseBalls />
+                ) : (
                   <Statistic
                     title={title}
                     frequencies={frequencies}
-                    handleToggle={this.toggleCurrentBall}
-                    checkIsActive={this.checkIsCurrentBall}
+                    handleToggle={selectToggle}
+                    checkIsActive={this.checkIsCurrentBallActive}
                   />
-                </Col>
-              ))
-            )}
+                )}
+              </Col>
+            ))}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Balls Combinations</h2>
               <p style={{ maxWidth: "900px" }}>
@@ -269,29 +189,30 @@ class App extends Component<IAppProps, IAppState> {
                 <strong>ball values</strong>.
               </p>
             </Col>
-            {isLoading ? (
-              <ContentSpinner />
-            ) : workerPercent < 100 ? (
-              <ContentProgress percent={workerPercent} />
-            ) : (
-              comboData.map(({ title, combinations }: IComboData) => (
-                <Col
-                  key={title}
-                  span={24}
-                  xs={24}
-                  lg={12}
-                  xxl={6}
-                  style={{ margin: "8px 0" }}
-                >
+            {(lottoDataIsFetching
+              ? createArrayOfLength(3)
+              : combinationsData
+            ).map(({ title, combinations }: IComboData, index) => (
+              <Col
+                key={title || index}
+                span={24}
+                xs={24}
+                lg={12}
+                xxl={6}
+                style={{ margin: "8px 0" }}
+              >
+                {lottoDataIsFetching || combinationsIsCalculating ? (
+                  <SkeletonCombinations />
+                ) : (
                   <Combinations
                     title={title}
                     combinations={combinations}
-                    handleToggle={this.toggleCurrentBall}
-                    checkIsActive={this.checkIsCurrentBall}
+                    handleToggle={selectToggle}
+                    checkIsActive={this.checkIsCurrentBallActive}
                   />
-                </Col>
-              ))
-            )}
+                )}
+              </Col>
+            ))}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Power Ball</h2>
               <p style={{ maxWidth: "900px" }}>
@@ -300,27 +221,60 @@ class App extends Component<IAppProps, IAppState> {
                 <strong>generic</strong> <em>Lotto Ball</em> references above.
               </p>
             </Col>
-            {isLoading ? (
-              <ContentSpinner />
-            ) : (
-              powerData.map(({ title, frequencies }: IBallData) => (
-                <Col
-                  key={title}
-                  span={12}
-                  xs={8}
-                  lg={6}
-                  xxl={4}
-                  style={{ margin: "8px 0" }}
-                >
-                  <Statistic
-                    title={""}
-                    frequencies={frequencies}
-                    handleToggle={() => {}}
-                    checkIsActive={() => true}
+            {(lottoDataIsFetching
+              ? createArrayOfLength(1)
+              : rangeDataPowerBalls
+            ).map(({ title, frequencies }: IBallData, index) => (
+              <Col
+                key={title || index}
+                span={12}
+                xs={8}
+                lg={6}
+                xxl={4}
+                style={{ margin: "8px 0" }}
+              >
+                {lottoDataIsFetching ? (
+                  <SkeletonPowerBalls />
+                ) : (
+                  <Statistic title={""} frequencies={frequencies} />
+                )}
+              </Col>
+            ))}
+            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
+              <h2>Draws</h2>
+              <p style={{ maxWidth: "900px" }}>
+                List the <em>Lotto Draws</em> in descending order{" "}
+                <em>
+                  (including <strong>Bonus</strong> and <strong>Power</strong>{" "}
+                  Balls)
+                </em>
+                .
+              </p>
+            </Col>
+            {(lottoDataIsFetching
+              ? createArrayOfLength(3)
+              : rangeDataDraws
+            ).map(({ title, draws }: IDrawData, index) => (
+              <Col
+                key={title || index}
+                span={24}
+                xs={24}
+                lg={12}
+                xxl={8}
+                style={{ margin: "8px 0" }}
+              >
+                {lottoDataIsFetching ? (
+                  <SkeletonDraws />
+                ) : (
+                  <Draw
+                    title={title}
+                    draws={draws}
+                    handleToggle={selectToggle}
+                    checkIsActive={this.checkIsCurrentBallActive}
                   />
-                </Col>
-              ))
-            )}
+                )}
+              </Col>
+            ))}
           </Row>
         </div>
       </div>
@@ -328,4 +282,28 @@ class App extends Component<IAppProps, IAppState> {
   }
 }
 
-export default App;
+const mapStateToProps = (state: IReduxCompleteState): IMapStateToProps => ({
+  ...state.lottoData,
+  ...state.rangeData,
+  ...state.combinations,
+  ...state.select
+});
+
+// const mapDispatchToProps = (dispatch: any): IMapDispatchToProps => ({
+//   lottoDataFetch: (...args) => dispatch(lottoDataFetch(...args)),
+//   selectToggle: (...args) => dispatch(selectToggle(...args)),
+//   selectClear: (...args) => dispatch(selectClear(...args))
+// });
+
+const mapDispatchToProps = {
+  lottoDataFetch,
+  rangeDataUpdateBase,
+  selectToggle,
+  selectClear,
+  combinationsCalculate
+};
+
+export default connect(
+  mapStateToProps, // as () => IMapStateToProps,
+  mapDispatchToProps // as () => IMapDispatchToProps
+)(App);

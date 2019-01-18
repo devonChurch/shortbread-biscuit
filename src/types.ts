@@ -1,7 +1,58 @@
+export interface IReduxLottoDataState {
+  lottoDataAll: ILottoDataJson[];
+  lottoDataTotalItems: number;
+  //
+  lottoDataOldestDate: number; // Milliseconds.
+  lottoDataNewestDate: number; // Milliseconds.
+  //
+  lottoDataIsFetching: boolean;
+}
+
+export interface IReduxRangeDataState {
+  rangeDataAll: ILottoDataJson[];
+  rangeDataTotalItems: number;
+  //
+  rangeDataBaseBalls: IBallData[];
+  rangeDataPowerBalls: IBallData[];
+  rangeDataDraws: IDrawData[];
+  //
+  rangeDataOldest: number; // Milliseconds.
+  rangeDataNewest: number; // Milliseconds.
+}
+
+export interface IReduxCombinationsState {
+  combinationsData: IComboData[];
+  combinationsIsCalculating: boolean;
+}
+
+export interface IReduxSelectState {
+  currentBalls: number[];
+}
+
+export interface IReduxCompleteState {
+  lottoData: IReduxLottoDataState;
+  rangeData: IReduxRangeDataState;
+  combinations: IReduxCombinationsState;
+  select: IReduxSelectState;
+}
+
+export enum EReduxActions {
+  LOTTO_DATA_FETCH = "LOTTO_DATA_FETCH",
+  LOTTO_DATA_SAVE_ALL = "LOTTO_DATA_SAVE_ALL",
+  //
+  RANGE_DATA_UPDATE = "RANGE_DATA_UPDATE",
+  //
+  SELECT_TOGGLE = "SELECT_TOGGLE",
+  SELECT_CLEAR = "SELECT_CLEAR",
+  //
+  COMBINATIONS_CALCULATE = "COMBINATIONS_CALCULATE",
+  COMBINATIONS_UPDATE = "COMBINATIONS_UPDATE"
+}
+
 export type TBallFrequency = [
   number, // Ball.
   number, // Frequency.
-  string // Color.
+  string //  Color.
 ];
 
 export interface IBallData {
@@ -9,7 +60,7 @@ export interface IBallData {
   frequencies: TBallFrequency[];
 }
 
-export interface IBallCsv {
+export interface ILottoDataCsv {
   1: string;
   2: string;
   3: string;
@@ -23,7 +74,7 @@ export interface IBallCsv {
   "Draw Date": string;
 }
 
-export interface IBallJson {
+export interface ILottoDataJson {
   position1: number;
   position2: number;
   position3: number;
@@ -38,7 +89,7 @@ export interface IBallJson {
   drawTime: number;
 }
 
-export enum EBallKeys {
+export enum ELottoJsonKeys {
   position1 = "position1",
   position2 = "position2",
   position3 = "position3",
@@ -64,4 +115,17 @@ export interface ICombinations {
 export interface IComboData {
   title: string;
   combinations: ICombinations[];
+}
+
+export interface IDrawItem {
+  drawNum: number;
+  balls: [
+    number, // Ball.
+    string // Color.
+  ][];
+}
+
+export interface IDrawData {
+  title: string;
+  draws: IDrawItem[];
 }

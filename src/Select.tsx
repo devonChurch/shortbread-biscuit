@@ -1,10 +1,11 @@
 import React, { SFC } from "react";
-import { Card } from "antd";
+import { Card, Button, Icon } from "antd";
 import { createListFromTo, getBallColor } from "./helpers";
 import Ball from "./Ball";
 
 interface ISelect {
   handleToggle: (ball: number) => void;
+  handleClear?: () => void;
   checkIsActive: (ball: number) => boolean;
 }
 
@@ -16,8 +17,23 @@ const optionsList = [
   [40]
 ];
 
-const Select: SFC<ISelect> = ({ handleToggle, checkIsActive }) => (
+const Select: SFC<ISelect> = ({ handleToggle, handleClear, checkIsActive }) => (
   <Card title="Selection" style={{ height: "100%" }}>
+    {handleClear && (
+      <Button
+        type="default"
+        icon="close"
+        size="small"
+        onClick={handleClear}
+        style={{
+          position: "absolute",
+          right: "16px",
+          top: "16px"
+        }}
+      >
+        Clear
+      </Button>
+    )}
     {optionsList.map(balls => (
       <div key={balls.join(",")}>
         {balls.map(ball => (
