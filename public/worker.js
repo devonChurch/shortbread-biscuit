@@ -1,6 +1,13 @@
-const MIN_COMBO_FREQUENCY = 2;
+const MIN_COMBO_FREQUENCY = {
+  1: Infinity,
+  2: Infinity,
+  3: 3,
+  4: 2,
+  5: 2,
+  6: 2
+};
 const MIN_COMBO_MATCH_LENGTH = 3;
-const MAX_COMBO_PER_SECTION = 10;
+const MAX_COMBO_PER_SECTION = 1000;
 const TITLE_KEYS = {
   1: "One",
   2: "Two",
@@ -99,7 +106,9 @@ const prepareComboData = table =>
 
 const sortCombinations = table =>
   table
-    .filter(({ frequency }) => frequency >= MIN_COMBO_FREQUENCY)
+    .filter(
+      ({ balls, frequency }) => frequency >= MIN_COMBO_FREQUENCY[balls.length]
+    )
     .sort(({ frequency: frequencyA }, { frequency: frequencyB }) =>
       frequencyA > frequencyB ? -1 : 1
     )
