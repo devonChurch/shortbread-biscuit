@@ -27,9 +27,11 @@ import Time from "./Time";
 import Statistic from "./Statistic";
 import Draw from "./Draw";
 import Combinations from "./Combinations";
+import Associations from "./Associations";
 import {
   SkeletonBaseBalls,
   SkeletonCombinations,
+  SkeletonAssociations,
   SkeletonPowerBalls,
   SkeletonDraws
 } from "./Skeleton";
@@ -109,8 +111,10 @@ class App extends Component<IAppProps, IAppState> {
       selectClear,
       //
       combinationsData,
+      combinationAssociations,
       combinationsIsCalculating
     } = this.props;
+
     return (
       <div style={{ background: colors.bgLight, minHeight: "100vh" }}>
         <div
@@ -148,6 +152,9 @@ class App extends Component<IAppProps, IAppState> {
 
         <div style={{ padding: "16px" }}>
           <Row type="flex" gutter={16}>
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Single Balls</h2>
               <p style={{ maxWidth: "900px" }}>
@@ -156,6 +163,9 @@ class App extends Component<IAppProps, IAppState> {
                 during the <strong>draw order</strong>?
               </p>
             </Col>
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
             {(lottoDataIsFetching
               ? createArrayOfLength(8)
               : rangeDataBaseBalls
@@ -180,6 +190,9 @@ class App extends Component<IAppProps, IAppState> {
                 )}
               </Col>
             ))}
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Balls Combinations</h2>
               <p style={{ maxWidth: "900px" }}>
@@ -189,6 +202,9 @@ class App extends Component<IAppProps, IAppState> {
                 <strong>ball values</strong>.
               </p>
             </Col>
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
             {(lottoDataIsFetching
               ? createArrayOfLength(3)
               : combinationsData
@@ -213,6 +229,35 @@ class App extends Component<IAppProps, IAppState> {
                 )}
               </Col>
             ))}
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
+            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
+              <h2>Associations</h2>
+              <p style={{ maxWidth: "900px" }}>
+                Derive associations between high frequency{" "}
+                <em>ball combinations</em>. This system facilitates the
+                identification of more in-depth trends that{" "}
+                <strong>maximise selection probability</strong>.
+              </p>
+            </Col>
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
+            <Col span={24} xs={24} lg={24} xxl={24} style={{ margin: "8px 0" }}>
+              {lottoDataIsFetching || combinationsIsCalculating ? (
+                <SkeletonAssociations />
+              ) : (
+                <Associations
+                  associations={combinationAssociations}
+                  handleToggle={selectToggle}
+                  checkIsActive={this.checkIsCurrentBallActive}
+                />
+              )}
+            </Col>
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Power Ball</h2>
               <p style={{ maxWidth: "900px" }}>
@@ -221,6 +266,9 @@ class App extends Component<IAppProps, IAppState> {
                 <strong>generic</strong> <em>Lotto Ball</em> references above.
               </p>
             </Col>
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
             {(lottoDataIsFetching
               ? createArrayOfLength(1)
               : rangeDataPowerBalls
@@ -240,6 +288,9 @@ class App extends Component<IAppProps, IAppState> {
                 )}
               </Col>
             ))}
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
             <Col span={24} xs={24} style={{ margin: "8px 0" }}>
               <h2>Draws</h2>
               <p style={{ maxWidth: "900px" }}>
@@ -251,6 +302,9 @@ class App extends Component<IAppProps, IAppState> {
                 .
               </p>
             </Col>
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
             {(lottoDataIsFetching
               ? createArrayOfLength(3)
               : rangeDataDraws
@@ -275,6 +329,9 @@ class App extends Component<IAppProps, IAppState> {
                 )}
               </Col>
             ))}
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
           </Row>
         </div>
       </div>

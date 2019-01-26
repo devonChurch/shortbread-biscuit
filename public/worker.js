@@ -1,12 +1,13 @@
 const MIN_COMBO_FREQUENCY = {
   1: Infinity,
-  2: Infinity,
+  2: 3,
   3: 3,
   4: 2,
   5: 2,
-  6: 2
+  6: 2,
+  7: 2
 };
-const MIN_COMBO_MATCH_LENGTH = 3;
+const MIN_COMBO_MATCH_LENGTH = 2;
 const MAX_COMBO_PER_SECTION = 1000;
 const TITLE_KEYS = {
   1: "One",
@@ -14,7 +15,8 @@ const TITLE_KEYS = {
   3: "Three",
   4: "Four",
   5: "Five",
-  6: "Six"
+  6: "Six",
+  7: "Seven"
 };
 
 const createRowComparison = () => {
@@ -116,8 +118,8 @@ const sortCombinations = table =>
       ballsA.length > ballsB.length ? -1 : 1
     );
 
-const sectionCombinations = table => {
-  const keyValuePairs = table.reduce((acc, row) => {
+const createSections = table =>
+  table.reduce((acc, row) => {
     const length = row.balls.length;
     const combinations = acc[length] || [];
     const hasRoom = combinations.length < MAX_COMBO_PER_SECTION;
@@ -129,27 +131,47 @@ const sectionCombinations = table => {
     return acc;
   }, {});
 
-  return Object.entries(keyValuePairs).reduce(
+const createCombinations = items =>
+  Object.entries(items).reduce(
     (acc, [key, combinations]) => [
       ...acc,
       { title: `${TITLE_KEYS[key]} Combinations`, combinations }
     ],
     []
   );
-};
 
 // We cannot pass in the master "getBallColor" function into the worker (as per
 // the spec). So in order to conform to the type interface for the "combination
 // data" we add in a generic  place holder that can be updated once we are back
 // on the main thread.
-const enrichWithColor = data =>
-  data.map(({ title, combinations }) => ({
-    title,
-    combinations: combinations.map(({ frequency, balls }) => ({
-      frequency,
-      balls: balls.map(ball => [ball, "blue"])
-    }))
+const enrichWithColor = combinations =>
+  combinations.map(({ frequency, balls }) => ({
+    frequency,
+    balls: balls.map(ball => [ball, "blue"])
   }));
+
+const createAssociation = (combination, [comparisons, ...columns]) => {
+  return comparisons.reduce((acc, comparison) => {
+    const whiteList = combination.balls.map(([ball]) => ball);
+    const match = comparison.balls.filter(([ball]) => whiteList.includes(ball));
+    const isMatch = Boolean(match.length === whiteList.length);
+
+    return isMatch
+      ? [...acc, comparison, ...createAssociation(comparison, columns)]
+      : acc;
+  }, []);
+};
+
+const createAssociations = items => {
+  const [combinations, ...comparisons] = Object.values(items);
+
+  return combinations.reduce((acc, combination) => {
+    const association = createAssociation(combination, comparisons);
+    const hasAssociation = association.length;
+
+    return hasAssociation ? [...acc, [combination, ...association]] : acc;
+  }, []);
+};
 
 onmessage = function(event) {
   const prepped = prepareComboData(event.data);
@@ -158,12 +180,19 @@ onmessage = function(event) {
   const frequencies = getFrequency(matches);
   const flattened = flattenSequence(frequencies);
   const sorted = sortCombinations(flattened);
-  const sections = sectionCombinations(sorted);
-  const colors = enrichWithColor(sections);
+  const colors = enrichWithColor(sorted);
+  const sections = createSections(colors);
+  const associations = createAssociations(sections);
+  console.log(
+    "associations",
+    JSON.stringify(associations.slice(0, 10), null, 2)
+  );
+  const combinations = createCombinations(sections);
 
   postMessage({
     isComplete: true,
-    combinations: colors
+    combinations,
+    associations
   });
 
   close();

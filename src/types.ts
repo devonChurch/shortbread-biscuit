@@ -22,6 +22,7 @@ export interface IReduxRangeDataState {
 
 export interface IReduxCombinationsState {
   combinationsData: IComboData[];
+  combinationAssociations: TAssociationData[];
   combinationsIsCalculating: boolean;
 }
 
@@ -116,6 +117,8 @@ export interface IComboData {
   title: string;
   combinations: ICombinations[];
 }
+
+export type TAssociationData = ICombinations[];
 
 export interface IDrawItem {
   drawNum: number;

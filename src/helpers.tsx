@@ -10,6 +10,7 @@ import {
   ILottoDataJson,
   ELottoJsonKeys,
   IComboData,
+  TAssociationData,
   IDrawItem,
   IDrawData
 } from "./types";
@@ -188,6 +189,16 @@ export const enrichCombinationsWithColor = (
     }))
   }));
 
+export const enrichAssociationsWithColor = (
+  associations: TAssociationData[]
+): TAssociationData[] =>
+  associations.map(association =>
+    association.map(({ frequency, balls }) => ({
+      frequency,
+      balls: balls.map(([ball]): [number, string] => [ball, getBallColor(ball)])
+    }))
+  );
+
 const createDrawItem = ({
   position1,
   position2,
@@ -271,11 +282,14 @@ export const createCombinationsWorkerSequence = (
   const throttled = throttle(updateCombinationsNotification, 500);
   const calculation = new Promise(resolve => {
     worker.onmessage = event => {
-      const { isComplete, combinations, progress } = event.data;
+      const { isComplete, combinations, associations, progress } = event.data;
       if (isComplete) {
         throttled.cancel();
         updateCombinationsNotification(100, 0.1);
-        resolve(enrichCombinationsWithColor(combinations));
+        resolve({
+          combinations: enrichCombinationsWithColor(combinations),
+          associations: enrichAssociationsWithColor(associations)
+        });
       } else {
         throttled(progress);
       }
