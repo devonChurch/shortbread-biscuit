@@ -28,6 +28,7 @@ import Statistic from "./Statistic";
 import Draw from "./Draw";
 import Combinations from "./Combinations";
 import Associations from "./Associations";
+import Prediction from "./Prediction";
 import {
   SkeletonBaseBalls,
   SkeletonCombinations,
@@ -152,6 +153,15 @@ class App extends Component<IAppProps, IAppState> {
 
         <div style={{ padding: "16px" }}>
           <Row type="flex" gutter={16}>
+            {/*
+              - - - - - - - - - - - - - - - -
+              */}
+            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
+              <Prediction
+                handleToggle={selectToggle}
+                checkIsActive={this.checkIsCurrentBallActive}
+              />
+            </Col>
             {/*
               - - - - - - - - - - - - - - - -
               */}

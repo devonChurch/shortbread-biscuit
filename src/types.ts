@@ -132,3 +132,13 @@ export interface IDrawData {
   title: string;
   draws: IDrawItem[];
 }
+
+export interface IPredictionData {
+  input: number[][];
+  output: number[];
+}
+
+export type TPrediction = [
+  number, // Ball.
+  string //  Color.
+][];
