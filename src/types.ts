@@ -50,15 +50,23 @@ export enum EReduxActions {
   COMBINATIONS_UPDATE = "COMBINATIONS_UPDATE"
 }
 
-export type TBallFrequency = [
-  number, // Ball.
-  number, // Frequency.
-  string //  Color.
-];
+// export type TBallFrequency = [
+//   number, // Ball.
+//   number, // Frequency.
+//   string //  Color.
+// ];
+
+export interface IBallFrequency {
+  frequency: number;
+  balls: [
+    number, // Ball.
+    string //  Color.
+  ][];
+}
 
 export interface IBallData {
   title: string;
-  frequencies: TBallFrequency[];
+  frequencies: IBallFrequency[];
 }
 
 export interface ILottoDataCsv {
@@ -106,19 +114,26 @@ export enum ELottoJsonKeys {
 }
 
 export interface ICombinations {
-  balls: [
+  frequency: number;
+  matches: [
     number, // Ball.
     string // Color.
-  ][];
-  frequency: number;
+  ][][];
 }
 
 export interface IComboData {
   title: string;
+  total: number;
   combinations: ICombinations[];
 }
 
-export type TAssociationData = ICombinations[];
+export type TAssociationData = {
+  frequency: number;
+  balls: [
+    number, // Ball.
+    string // Color.
+  ][];
+}[];
 
 export interface IDrawItem {
   drawNum: number;

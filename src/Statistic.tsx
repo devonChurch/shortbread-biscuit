@@ -1,7 +1,8 @@
-import React, { SFC } from "react";
+import React, { SFC, Fragment } from "react";
 import { Card } from "antd";
 import { IBallData } from "./types";
-import Ball from "./Ball";
+import Ball, { Detail } from "./Ball";
+import BallsList, { BallsFrequecy } from "./Balls";
 
 interface IStatistic {
   title: IBallData["title"];
@@ -17,20 +18,43 @@ const Statistic: SFC<IStatistic> = ({
   checkIsActive
 }) => (
   <Card title={title}>
-    {frequencies.map(
+    <BallsFrequecy>
+      {frequencies.map(({ frequency, balls }) => (
+        <Fragment key={frequency}>
+          <Detail>x{frequency}</Detail>
+          <div>
+            <BallsList>
+              {balls.map(
+                ([ball, color]) =>
+                  Boolean(ball) && (
+                    <Ball
+                      key={ball}
+                      ball={ball}
+                      color={color}
+                      handleClick={handleToggle}
+                      isActive={!checkIsActive || checkIsActive(ball)}
+                    />
+                  )
+              )}
+            </BallsList>
+          </div>
+        </Fragment>
+      ))}
+    </BallsFrequecy>
+    {/* {frequencies.map(
       ([ball, frequency, color]) =>
         Boolean(ball) && (
-          <div
-            key={ball}
-            style={{
-              opacity: !checkIsActive || checkIsActive(ball) ? 1 : 0.2
-            }}
-          >
-            <Ball ball={ball} color={color} handleClick={handleToggle} />x
-            {frequency}
+          <div key={ball}>
+            <Ball
+              ball={ball}
+              color={color}
+              handleClick={handleToggle}
+              isActive={!checkIsActive || checkIsActive(ball)}
+            />
+            x{frequency}
           </div>
         )
-    )}
+    )} */}
   </Card>
 );
 

@@ -1,30 +1,20 @@
 import React, { SFC } from "react";
 import { Card } from "antd";
 import { IPredictionData, TPrediction } from "./types";
+import { colors } from "./statics";
 import { getBallColor } from "./helpers";
 import predictionsData from "./predictions.json";
 import Ball from "./Ball";
+import BallsList from "./Balls";
 
-const { oneToSixBalls, bounsBall, powerBall } = (() => {
-  const [
-    one,
-    two,
-    three,
-    four,
-    five,
-    six,
-    bonus,
-    power
-  ]: TPrediction = (predictionsData as IPredictionData[])
-    .slice(-1)[0]
-    .output.map((ball): [number, string] => [ball, getBallColor(ball)]);
-
-  return {
-    oneToSixBalls: [one, two, three, four, five, six],
-    bounsBall: bonus,
-    powerBall: power
-  };
-})();
+const balls: TPrediction = (predictionsData as IPredictionData[])
+  .slice(-1)[0]
+  .output.map(
+    (ball, index): [number, string] => [
+      ball,
+      index === 7 ? colors.ballPower : getBallColor(ball)
+    ]
+  );
 
 interface IProps {
   handleToggle: (ball: number) => void;
@@ -33,44 +23,20 @@ interface IProps {
 
 const Prediction: SFC<IProps> = ({ checkIsActive, handleToggle }) => (
   <Card>
-    <div>
-      <h4 style={{ marginBottom: "8px" }}>Position One to Six</h4>
-
-      {oneToSixBalls.map(([ball, color]) => (
-        <span
-          key={ball}
-          style={{
-            opacity: checkIsActive(ball) ? 1 : 0.2
-          }}
-        >
-          <Ball ball={ball} color={color} handleClick={handleToggle} />
-        </span>
-      ))}
-    </div>
-    <div>
-      <h4 style={{ margin: "16px 0 8px" }}>Bonus Ball</h4>
-      {(([ball, color]) => (
-        <span
-          style={{
-            opacity: checkIsActive(ball) ? 1 : 0.2
-          }}
-        >
-          <Ball ball={ball} color={color} handleClick={handleToggle} />
-        </span>
-      ))(bounsBall)}
-    </div>
-    <div>
-      <h4 style={{ margin: "16px 0 8px" }}>Power Ball</h4>
-      {(([ball, color]) => (
-        <span
-          style={{
-            opacity: checkIsActive(ball) ? 1 : 0.2
-          }}
-        >
-          <Ball ball={ball} color={color} handleClick={handleToggle} />
-        </span>
-      ))(powerBall)}
-    </div>
+    <BallsList>
+      {balls.map(
+        ([ball, color]) =>
+          Boolean(ball) && (
+            <Ball
+              key={ball}
+              ball={ball}
+              color={color}
+              handleClick={handleToggle}
+              isActive={!checkIsActive || checkIsActive(ball)}
+            />
+          )
+      )}
+    </BallsList>
   </Card>
 );
 

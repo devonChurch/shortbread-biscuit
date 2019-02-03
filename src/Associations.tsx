@@ -1,7 +1,8 @@
 import React, { SFC, Fragment } from "react";
 import { Card } from "antd";
 import { TAssociationData } from "./types";
-import Ball from "./Ball";
+import Ball, { Detail } from "./Ball";
+import BallsList, { BallsAssociation, BallsGroup } from "./Balls";
 
 interface IAssociations {
   associations: TAssociationData[];
@@ -15,33 +16,33 @@ const Associations: SFC<IAssociations> = ({
   checkIsActive
 }) => (
   <Card>
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
-        gridRowGap: "40px"
-      }}
-    >
+    <BallsGroup total={7}>
       {associations.map((association, index) => (
-        <div key={index}>
+        <BallsAssociation key={index}>
           {association.map(({ balls, frequency }) => (
-            <div key={balls.join(",")}>
-              {balls.map(([ball, color]) => (
-                <span
-                  key={ball}
-                  style={{
-                    opacity: checkIsActive(ball) ? 1 : 0.2
-                  }}
-                >
-                  <Ball ball={ball} color={color} handleClick={handleToggle} />
-                </span>
-              ))}
-              x{frequency}
-            </div>
+            <Fragment key={balls.join(",")}>
+              <Detail>x{frequency}</Detail>
+              <div>
+                <BallsList>
+                  {balls.map(
+                    ([ball, color]) =>
+                      Boolean(ball) && (
+                        <Ball
+                          key={ball}
+                          ball={ball}
+                          color={color}
+                          handleClick={handleToggle}
+                          isActive={!checkIsActive || checkIsActive(ball)}
+                        />
+                      )
+                  )}
+                </BallsList>
+              </div>
+            </Fragment>
           ))}
-        </div>
+        </BallsAssociation>
       ))}
-    </div>
+    </BallsGroup>
   </Card>
 );
 

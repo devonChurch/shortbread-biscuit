@@ -5,6 +5,7 @@ export const colors = {
   ballGreen: "#00BFA5",
   ballOrange: "#FF6D00",
   ballBlue: "#2962FF",
+  ballPower: "#607D8B",
   // Background.
   bgDark: "#001529",
   bgLight: "#f0f2f5"

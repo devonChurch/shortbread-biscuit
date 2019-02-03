@@ -218,13 +218,13 @@ class App extends Component<IAppProps, IAppState> {
             {(lottoDataIsFetching
               ? createArrayOfLength(3)
               : combinationsData
-            ).map(({ title, combinations }: IComboData, index) => (
+            ).map(({ title, total, combinations }: IComboData, index) => (
               <Col
                 key={title || index}
                 span={24}
                 xs={24}
-                lg={12}
-                xxl={6}
+                lg={24}
+                xxl={24}
                 style={{ margin: "8px 0" }}
               >
                 {lottoDataIsFetching || combinationsIsCalculating ? (
@@ -232,6 +232,7 @@ class App extends Component<IAppProps, IAppState> {
                 ) : (
                   <Combinations
                     title={title}
+                    total={total}
                     combinations={combinations}
                     handleToggle={selectToggle}
                     checkIsActive={this.checkIsCurrentBallActive}

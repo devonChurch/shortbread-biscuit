@@ -2,6 +2,7 @@ import React, { SFC } from "react";
 import { Card, Button, Icon } from "antd";
 import { createListFromTo, getBallColor } from "./helpers";
 import Ball from "./Ball";
+import BallsList, { BallsStack } from "./Balls";
 
 interface ISelect {
   handleToggle: (ball: number) => void;
@@ -34,25 +35,21 @@ const Select: SFC<ISelect> = ({ handleToggle, handleClear, checkIsActive }) => (
         Clear
       </Button>
     )}
-    {optionsList.map(balls => (
-      <div key={balls.join(",")}>
-        {balls.map(ball => (
-          <span
-            key={ball}
-            style={{
-              opacity: checkIsActive(ball) ? 1 : 0.2,
-              display: "inline-block"
-            }}
-          >
+    <BallsStack>
+      {optionsList.map(balls => (
+        <BallsList key={balls.join(",")}>
+          {balls.map(ball => (
             <Ball
+              key={ball}
               ball={ball}
               color={getBallColor(ball)}
+              isActive={checkIsActive(ball)}
               handleClick={() => handleToggle(ball)}
             />
-          </span>
-        ))}
-      </div>
-    ))}
+          ))}
+        </BallsList>
+      ))}
+    </BallsStack>
   </Card>
 );
 

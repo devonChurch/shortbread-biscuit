@@ -131,17 +131,39 @@ const createSections = table =>
     return acc;
   }, {});
 
+const createFrequencyGroups = combinations => {
+  const frequencyObj = combinations.reduce((acc, { frequency, balls }) => {
+    const matches = acc[frequency];
+
+    return {
+      ...acc,
+      [frequency]: [...(matches || []), balls]
+    };
+  }, {});
+
+  return Object.entries(frequencyObj)
+    .reverse()
+    .map(([frequency, matches]) => ({
+      frequency: +frequency,
+      matches
+    }));
+};
+
 const createCombinations = items =>
   Object.entries(items).reduce(
     (acc, [key, combinations]) => [
       ...acc,
-      { title: `${TITLE_KEYS[key]} Combinations`, combinations }
+      {
+        title: `${TITLE_KEYS[key]} Combinations`,
+        total: +key,
+        combinations: createFrequencyGroups(combinations)
+      }
     ],
     []
   );
 
 // We cannot pass in the master "getBallColor" function into the worker (as per
-// the spec). So in order to conform to the type interface for the "combination
+// the W3C spec). So in order to conform to the type interface for the "combination
 // data" we add in a generic  place holder that can be updated once we are back
 // on the main thread.
 const enrichWithColor = combinations =>
@@ -183,11 +205,15 @@ onmessage = function(event) {
   const colors = enrichWithColor(sorted);
   const sections = createSections(colors);
   const associations = createAssociations(sections);
-  console.log(
-    "associations",
-    JSON.stringify(associations.slice(0, 10), null, 2)
-  );
+  // console.log(
+  //   "associations",
+  //   JSON.stringify(associations.slice(0, 10), null, 2)
+  // );
   const combinations = createCombinations(sections);
+  // console.log(
+  //   "combinations",
+  //   JSON.stringify(combinations.slice(0, 10), null, 2)
+  // );
 
   postMessage({
     isComplete: true,

@@ -4,7 +4,7 @@ import axios from "axios";
 import csvToJson from "csvtojson";
 import throttle from "lodash.throttle";
 import {
-  TBallFrequency,
+  IBallFrequency,
   IBallData,
   ILottoDataCsv,
   ILottoDataJson,
@@ -50,12 +50,14 @@ export const getFrequencies = (
   columns: ELottoJsonKeys[],
   max: number,
   createColor: (ball: number) => string
-): TBallFrequency[] => {
+): IBallFrequency[] => {
   const shell = new Array(max)
     .fill(0)
     .reduce((acc, _, index) => ({ ...acc, [`${index + 1}`]: 0 }), {});
 
-  const frequencies = json.reduce((accFreq, row) => {
+  const ballObj: {
+    [key: string]: number;
+  } = json.reduce((accFreq, row) => {
     return columns.reduce((accCol, column) => {
       const ball = row[column];
       return {
@@ -65,17 +67,38 @@ export const getFrequencies = (
     }, accFreq);
   }, shell);
 
-  return Object.entries(frequencies)
-    .sort(([, frequencyA], [, frequencyB]) =>
-      frequencyA > frequencyB ? -1 : 1
-    )
-    .map(
-      ([ball, frequency]): TBallFrequency => [
-        +ball,
-        +frequency,
-        createColor(+ball)
-      ]
-    );
+  const frequencyObj = Object.entries(ballObj).reduce(
+    (acc, [ball, frequency]) => {
+      const balls = acc[frequency];
+
+      return {
+        ...acc,
+        [frequency + 1]: [...(balls || []), [+ball, createColor(+ball)]]
+      };
+    },
+    {} as {
+      [key: string]: IBallFrequency["balls"];
+    }
+  );
+
+  return Object.entries(frequencyObj)
+    .reverse()
+    .map(([frequency, balls]) => ({
+      frequency: +frequency,
+      balls
+    }));
+
+  // return Object.entries(frequencies)
+  //   .sort(([, frequencyA], [, frequencyB]) =>
+  //     frequencyA > frequencyB ? -1 : 1
+  //   )
+  //   .map(
+  //     ([ball, frequency]): IBallFrequency => [
+  //       +ball,
+  //       +frequency,
+  //       createColor(+ball)
+  //     ]
+  //   );
 };
 
 export const sliceItemsByTime = (
@@ -167,7 +190,7 @@ export const extractRangeDataFromLottoData = (
   ];
   // prettier-ignore
   const powerBalls = [
-    {title: 'Power Ball', frequencies: getFrequencies(rangeData, [powerBall], 10, () => 'blue') }
+    {title: 'Power Ball', frequencies: getFrequencies(rangeData, [powerBall], 10, () => colors.ballPower) }
   ];
 
   return {
@@ -181,13 +204,27 @@ export const extractRangeDataFromLottoData = (
 export const enrichCombinationsWithColor = (
   combinationsData: IComboData[]
 ): IComboData[] =>
-  combinationsData.map(({ title, combinations }) => ({
+  combinationsData.map(({ title, total, combinations }) => ({
     title,
-    combinations: combinations.map(({ frequency, balls }) => ({
+    total,
+    combinations: combinations.map(({ frequency, matches }) => ({
       frequency,
-      balls: balls.map(([ball]): [number, string] => [ball, getBallColor(ball)])
+      matches: matches.map(balls =>
+        balls.map(([ball]): [number, string] => [ball, getBallColor(ball)])
+      )
     }))
   }));
+
+// export const enrichCombinationsWithColor = (
+//   combinationsData: IComboData[]
+// ): IComboData[] =>
+//   combinationsData.map(({ title, combinations }) => ({
+//     title,
+//     combinations: combinations.map(({ frequency, balls }) => ({
+//       frequency,
+//       balls: balls.map(([ball]): [number, string] => [ball, getBallColor(ball)])
+//     }))
+//   }));
 
 export const enrichAssociationsWithColor = (
   associations: TAssociationData[]
@@ -219,7 +256,7 @@ const createDrawItem = ({
     [position5, getBallColor(position5)],
     [position6, getBallColor(position6)],
     [bonusBall1, getBallColor(bonusBall1)],
-    [powerBall, "blue"]
+    [powerBall, colors.ballPower]
   ]
 });
 
