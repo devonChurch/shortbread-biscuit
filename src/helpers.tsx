@@ -69,7 +69,7 @@ export const getFrequencies = (
 
   const frequencyObj = Object.entries(ballObj).reduce(
     (acc, [ball, frequency]) => {
-      const balls = acc[frequency];
+      const balls = acc[frequency + 1];
 
       return {
         ...acc,
@@ -87,18 +87,6 @@ export const getFrequencies = (
       frequency: +frequency,
       balls
     }));
-
-  // return Object.entries(frequencies)
-  //   .sort(([, frequencyA], [, frequencyB]) =>
-  //     frequencyA > frequencyB ? -1 : 1
-  //   )
-  //   .map(
-  //     ([ball, frequency]): IBallFrequency => [
-  //       +ball,
-  //       +frequency,
-  //       createColor(+ball)
-  //     ]
-  //   );
 };
 
 export const sliceItemsByTime = (
