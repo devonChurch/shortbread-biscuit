@@ -2,7 +2,7 @@ import React, { SFC, Fragment } from "react";
 import { Card } from "antd";
 import { IBallData } from "./types";
 import Ball, { Detail } from "./Ball";
-import BallsList, { BallsFrequecy } from "./Balls";
+import BallsList, { BallsFrequecy, BallsCombination } from "./Balls";
 
 interface IStatistic {
   title: IBallData["title"];
@@ -20,7 +20,7 @@ const Statistic: SFC<IStatistic> = ({
   <Card title={title}>
     <BallsFrequecy>
       {frequencies.map(({ frequency, balls }) => (
-        <Fragment key={frequency}>
+        <BallsCombination key={frequency}>
           <Detail>x{frequency}</Detail>
           <div>
             <BallsList>
@@ -38,7 +38,7 @@ const Statistic: SFC<IStatistic> = ({
               )}
             </BallsList>
           </div>
-        </Fragment>
+        </BallsCombination>
       ))}
     </BallsFrequecy>
     {/* {frequencies.map(

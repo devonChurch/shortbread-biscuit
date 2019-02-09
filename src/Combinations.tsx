@@ -2,7 +2,11 @@ import React, { SFC, Fragment } from "react";
 import { Card } from "antd";
 import { IComboData } from "./types";
 import Ball, { Detail } from "./Ball";
-import BallsList, { BallsFrequecy, BallsGroup } from "./Balls";
+import BallsList, {
+  BallsFrequecy,
+  BallsGroup,
+  BallsCombination
+} from "./Balls";
 
 interface ICombinations {
   title: string;
@@ -22,7 +26,7 @@ const Combinations: SFC<ICombinations> = ({
   <Card title={title}>
     <BallsFrequecy>
       {combinations.map(({ frequency, matches }) => (
-        <Fragment key={frequency}>
+        <BallsCombination key={frequency}>
           <Detail>x{frequency}</Detail>
           <BallsGroup total={total}>
             {matches.map(balls => (
@@ -42,7 +46,7 @@ const Combinations: SFC<ICombinations> = ({
               </BallsList>
             ))}
           </BallsGroup>
-        </Fragment>
+        </BallsCombination>
       ))}
     </BallsFrequecy>
   </Card>

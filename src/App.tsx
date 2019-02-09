@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import moment from "moment";
-import { Row, Col } from "antd";
 import {
   IReduxCompleteState,
   IReduxLottoDataState,
@@ -22,6 +21,7 @@ import {
 } from "./redux/actions";
 import { createArrayOfLength } from "./helpers";
 import { colors, dateFormat } from "./statics";
+import Section from "./Section";
 import Select from "./Select";
 import Time from "./Time";
 import Statistic from "./Statistic";
@@ -47,13 +47,11 @@ interface IMapStateToProps
 
 interface IMapDispatchToProps {
   lottoDataFetch: () => void;
-  rangeDataUpdateBase: (
-    args: {
-      lottoDataAll: ILottoDataJson[];
-      rangeDataOldest: number;
-      rangeDataNewest: number;
-    }
-  ) => void;
+  rangeDataUpdateBase: (args: {
+    lottoDataAll: ILottoDataJson[];
+    rangeDataOldest: number;
+    rangeDataNewest: number;
+  }) => void;
   selectToggle: (ballNum: number) => void;
   selectClear: () => void;
   combinationsCalculate: () => void;
@@ -118,233 +116,179 @@ class App extends Component<IAppProps, IAppState> {
 
     return (
       <div style={{ background: colors.bgLight, minHeight: "100vh" }}>
-        <div
-          style={{
-            background: colors.bgDark,
-            padding: "8px 16px"
-          }}
+        <Section
+          title="Settings"
+          background={colors.bg200}
+          minCard="300px"
+          maxCard="1fr"
         >
-          <h1 style={{ color: "white", margin: 0 }}>Lotto Settings</h1>
-          <Row type="flex" gutter={16}>
-            <Col span={24} xs={24} lg={24} xxl={12} style={{ margin: "8px 0" }}>
-              <Select
+          <Select
+            handleToggle={selectToggle}
+            checkIsActive={this.checkIsCurrentBallActive}
+            handleClear={Boolean(currentBalls.length) ? selectClear : undefined}
+          />
+
+          <Time
+            absoluteOldestDate={lottoDataOldestDate}
+            absoluteNewestDate={lottoDataNewestDate}
+            currentOldestDate={rangeDataOldest}
+            currentNewestDate={rangeDataNewest}
+            handleChange={this.updateFromToDates}
+            totalCurrentDraws={rangeDataTotalItems}
+            totalPossibleDraws={lottoDataTotalItems}
+            isLoading={lottoDataIsFetching}
+          />
+        </Section>
+
+        {/*
+          - - - - - - - - - - - - - - - -
+          */}
+
+        <Section
+          title="Machine Learning"
+          background={colors.bg200}
+          minCard="300px"
+          maxCard="1fr"
+        >
+          <Prediction
+            handleToggle={selectToggle}
+            checkIsActive={this.checkIsCurrentBallActive}
+          />
+        </Section>
+
+        {/*
+          - - - - - - - - - - - - - - - -
+          */}
+
+        <Section
+          title="Single Balls"
+          background={colors.bg200}
+          minCard="280px"
+          maxCard="1fr"
+        >
+          {(lottoDataIsFetching
+            ? createArrayOfLength(8)
+            : rangeDataBaseBalls
+          ).map(({ title, frequencies }: IBallData, index) =>
+            lottoDataIsFetching ? (
+              <SkeletonBaseBalls key={`skeleton${index}`} />
+            ) : (
+              <Statistic
+                key={title}
+                title={title}
+                frequencies={frequencies}
                 handleToggle={selectToggle}
                 checkIsActive={this.checkIsCurrentBallActive}
-                handleClear={
-                  Boolean(currentBalls.length) ? selectClear : undefined
-                }
               />
-            </Col>
+            )
+          )}
+        </Section>
 
-            <Col span={24} xs={24} lg={24} xxl={12} style={{ margin: "8px 0" }}>
-              <Time
-                absoluteOldestDate={lottoDataOldestDate}
-                absoluteNewestDate={lottoDataNewestDate}
-                currentOldestDate={rangeDataOldest}
-                currentNewestDate={rangeDataNewest}
-                handleChange={this.updateFromToDates}
-                totalCurrentDraws={rangeDataTotalItems}
-                totalPossibleDraws={lottoDataTotalItems}
-                isLoading={lottoDataIsFetching}
-              />
-            </Col>
-          </Row>
-        </div>
+        {/*
+          - - - - - - - - - - - - - - - -
+          */}
 
-        <div style={{ padding: "16px" }}>
-          <Row type="flex" gutter={16}>
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
-              <Prediction
+        <Section
+          title="Balls Combinations"
+          background={colors.bg200}
+          minCard="100%"
+          maxCard="1fr"
+        >
+          {(lottoDataIsFetching
+            ? createArrayOfLength(3)
+            : combinationsData
+          ).map(({ title, total, combinations }: IComboData, index) =>
+            lottoDataIsFetching || combinationsIsCalculating ? (
+              <SkeletonCombinations key={`skeleton${index}`} />
+            ) : (
+              <Combinations
+                key={title}
+                title={title}
+                total={total}
+                combinations={combinations}
                 handleToggle={selectToggle}
                 checkIsActive={this.checkIsCurrentBallActive}
               />
-            </Col>
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
-              <h2>Single Balls</h2>
-              <p style={{ maxWidth: "900px" }}>
-                Looking at each <em>Lotto Ball</em> in isolation. What ball{" "}
-                <strong>appeared the most</strong>? Where did each ball fall
-                during the <strong>draw order</strong>?
-              </p>
-            </Col>
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-            {(lottoDataIsFetching
-              ? createArrayOfLength(8)
-              : rangeDataBaseBalls
-            ).map(({ title, frequencies }: IBallData, index) => (
-              <Col
-                key={title || index}
-                span={12}
-                xs={8}
-                lg={6}
-                xxl={3}
-                style={{ margin: "8px 0" }}
-              >
-                {lottoDataIsFetching ? (
-                  <SkeletonBaseBalls />
-                ) : (
-                  <Statistic
-                    title={title}
-                    frequencies={frequencies}
-                    handleToggle={selectToggle}
-                    checkIsActive={this.checkIsCurrentBallActive}
-                  />
-                )}
-              </Col>
-            ))}
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
-              <h2>Balls Combinations</h2>
-              <p style={{ maxWidth: "900px" }}>
-                Finding similar <em>Lotto Ball</em> combinations between each
-                draw. We disregard <strong>ball order</strong> and instead{" "}
-                <strong>aggregate</strong> each combination match based on{" "}
-                <strong>ball values</strong>.
-              </p>
-            </Col>
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-            {(lottoDataIsFetching
-              ? createArrayOfLength(3)
-              : combinationsData
-            ).map(({ title, total, combinations }: IComboData, index) => (
-              <Col
-                key={title || index}
-                span={24}
-                xs={24}
-                lg={24}
-                xxl={24}
-                style={{ margin: "8px 0" }}
-              >
-                {lottoDataIsFetching || combinationsIsCalculating ? (
-                  <SkeletonCombinations />
-                ) : (
-                  <Combinations
-                    title={title}
-                    total={total}
-                    combinations={combinations}
-                    handleToggle={selectToggle}
-                    checkIsActive={this.checkIsCurrentBallActive}
-                  />
-                )}
-              </Col>
-            ))}
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
-              <h2>Associations</h2>
-              <p style={{ maxWidth: "900px" }}>
-                Derive associations between high frequency{" "}
-                <em>ball combinations</em>. This system facilitates the
-                identification of more in-depth trends that{" "}
-                <strong>maximise selection probability</strong>.
-              </p>
-            </Col>
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-            <Col span={24} xs={24} lg={24} xxl={24} style={{ margin: "8px 0" }}>
-              {lottoDataIsFetching || combinationsIsCalculating ? (
-                <SkeletonAssociations />
+            )
+          )}
+        </Section>
+
+        {/*
+          - - - - - - - - - - - - - - - -
+          */}
+
+        <Section
+          title="Associations"
+          background={colors.bg200}
+          minCard="1fr"
+          maxCard="1fr"
+        >
+          {lottoDataIsFetching || combinationsIsCalculating ? (
+            <SkeletonAssociations />
+          ) : (
+            <Associations
+              associations={combinationAssociations}
+              handleToggle={selectToggle}
+              checkIsActive={this.checkIsCurrentBallActive}
+            />
+          )}
+        </Section>
+
+        {/*
+          - - - - - - - - - - - - - - - -
+          */}
+
+        <Section
+          title="Power Ball"
+          background={colors.bg200}
+          minCard="300px"
+          maxCard="1fr"
+        >
+          {(lottoDataIsFetching
+            ? createArrayOfLength(1)
+            : rangeDataPowerBalls
+          ).map(({ frequencies }: IBallData, index) =>
+            lottoDataIsFetching ? (
+              <SkeletonPowerBalls key={`skeleton${index}`} />
+            ) : (
+              <Statistic
+                key={`powerBall${index}`}
+                title={""}
+                frequencies={frequencies}
+              />
+            )
+          )}
+        </Section>
+
+        {/*
+          - - - - - - - - - - - - - - - -
+          */}
+
+        <Section
+          title="Draws"
+          background={colors.bg200}
+          minCard="360px"
+          maxCard="1fr"
+        >
+          {(lottoDataIsFetching ? createArrayOfLength(3) : rangeDataDraws).map(
+            ({ title, draws }: IDrawData, index) =>
+              lottoDataIsFetching ? (
+                <SkeletonDraws key={`skeleton${index}`} />
               ) : (
-                <Associations
-                  associations={combinationAssociations}
+                <Draw
+                  key={title}
+                  title={title}
+                  draws={draws}
                   handleToggle={selectToggle}
                   checkIsActive={this.checkIsCurrentBallActive}
                 />
-              )}
-            </Col>
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
-              <h2>Power Ball</h2>
-              <p style={{ maxWidth: "900px" }}>
-                Show the most frequent appearing <em>Lotto Power Ball</em>. This
-                part of the draw has no affiliation to the{" "}
-                <strong>generic</strong> <em>Lotto Ball</em> references above.
-              </p>
-            </Col>
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-            {(lottoDataIsFetching
-              ? createArrayOfLength(1)
-              : rangeDataPowerBalls
-            ).map(({ title, frequencies }: IBallData, index) => (
-              <Col
-                key={title || index}
-                span={12}
-                xs={8}
-                lg={6}
-                xxl={4}
-                style={{ margin: "8px 0" }}
-              >
-                {lottoDataIsFetching ? (
-                  <SkeletonPowerBalls />
-                ) : (
-                  <Statistic title={""} frequencies={frequencies} />
-                )}
-              </Col>
-            ))}
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-            <Col span={24} xs={24} style={{ margin: "8px 0" }}>
-              <h2>Draws</h2>
-              <p style={{ maxWidth: "900px" }}>
-                List the <em>Lotto Draws</em> in descending order{" "}
-                <em>
-                  (including <strong>Bonus</strong> and <strong>Power</strong>{" "}
-                  Balls)
-                </em>
-                .
-              </p>
-            </Col>
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-            {(lottoDataIsFetching
-              ? createArrayOfLength(3)
-              : rangeDataDraws
-            ).map(({ title, draws }: IDrawData, index) => (
-              <Col
-                key={title || index}
-                span={24}
-                xs={24}
-                lg={12}
-                xxl={8}
-                style={{ margin: "8px 0" }}
-              >
-                {lottoDataIsFetching ? (
-                  <SkeletonDraws />
-                ) : (
-                  <Draw
-                    title={title}
-                    draws={draws}
-                    handleToggle={selectToggle}
-                    checkIsActive={this.checkIsCurrentBallActive}
-                  />
-                )}
-              </Col>
-            ))}
-            {/*
-              - - - - - - - - - - - - - - - -
-              */}
-          </Row>
-        </div>
+              )
+          )}
+        </Section>
+
+        {/*
+          - - - - - - - - - - - - - - - -
+          */}
       </div>
     );
   }

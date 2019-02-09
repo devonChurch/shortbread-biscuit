@@ -50,12 +50,6 @@ export enum EReduxActions {
   COMBINATIONS_UPDATE = "COMBINATIONS_UPDATE"
 }
 
-// export type TBallFrequency = [
-//   number, // Ball.
-//   number, // Frequency.
-//   string //  Color.
-// ];
-
 export interface IBallFrequency {
   frequency: number;
   balls: [

@@ -11,7 +11,7 @@ interface IBlobProps {
 
 const SkeletonBlob: SFC<IBlobProps> = ({ style, isInline }) => (
   <div
-    className="ant-skeleton ant-skeleton-active"
+    // className="ant-skeleton ant-skeleton-active"
     style={{ display: isInline ? "inline-block" : "block", width: "auto" }}
   >
     <span className="ant-skeleton-content" style={{ display: "block" }}>
