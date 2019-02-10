@@ -1,18 +1,25 @@
-const MIN_COMBO_FREQUENCY = 2;
-const MIN_COMBO_MATCH_LENGTH = 3;
-const MAX_COMBO_PER_SECTION = 10;
+const MIN_COMBO_FREQUENCY = {
+  1: Infinity,
+  2: 3,
+  3: 3,
+  4: 2,
+  5: 2,
+  6: 2,
+  7: 2
+};
+const MIN_COMBO_MATCH_LENGTH = 2;
+const MAX_COMBO_PER_SECTION = 1000;
 const TITLE_KEYS = {
   1: "One",
   2: "Two",
   3: "Three",
   4: "Four",
   5: "Five",
-  6: "Six"
+  6: "Six",
+  7: "Seven"
 };
 
 const createRowComparison = () => {
-  // let progress = 0;
-  // let totalItems;
   const cache = [];
   const createCacheEntry = (indexA, indexB) =>
     `${Math.min(indexA, indexB)},${Math.max(indexA, indexB)}`;
@@ -23,11 +30,6 @@ const createRowComparison = () => {
 
   return (table, comparison, comboIndex) =>
     table.reduce((acc, row, rowIndex) => {
-      postMessage({
-        isComplete: false,
-        progress: comboIndex + 1
-      });
-
       if (checkIsInCache(comboIndex, rowIndex)) {
         return acc;
       } else {
@@ -43,12 +45,28 @@ const createRowComparison = () => {
 const compareTable = (table, compareRows) =>
   table.reduce((acc, row, index) => {
     const data = table.slice(index + 1);
+    const totalTableRows = table.length || 1;
+
+    postMessage({
+      progress: {
+        compareData: (index + 1) / totalTableRows * 100
+      }
+    });
 
     return [...acc, ...compareRows(data, row, index)];
   }, []);
 
-const getFrequency = matches =>
-  matches.reduce((acc, match) => {
+const getFrequency = matches => {
+  const totalMatches = matches.length || 1;
+  
+  return matches.reduce((acc, match, index) => {
+    postMessage({
+      progress: {
+        compareData: 100,
+        getFrequencies: (index + 1) / totalMatches * 100
+      }
+    });
+    
     const key = match.join(",");
     const hasKey = acc.hasOwnProperty(key);
 
@@ -62,7 +80,8 @@ const getFrequency = matches =>
     }
 
     return acc;
-  }, {});
+  }, {})
+};
 
 const flattenSequence = frequency =>
   Object.values(frequency).reduce(
@@ -99,7 +118,9 @@ const prepareComboData = table =>
 
 const sortCombinations = table =>
   table
-    .filter(({ frequency }) => frequency >= MIN_COMBO_FREQUENCY)
+    .filter(
+      ({ balls, frequency }) => frequency >= MIN_COMBO_FREQUENCY[balls.length]
+    )
     .sort(({ frequency: frequencyA }, { frequency: frequencyB }) =>
       frequencyA > frequencyB ? -1 : 1
     )
@@ -107,8 +128,8 @@ const sortCombinations = table =>
       ballsA.length > ballsB.length ? -1 : 1
     );
 
-const sectionCombinations = table => {
-  const keyValuePairs = table.reduce((acc, row) => {
+const createSections = table =>
+  table.reduce((acc, row) => {
     const length = row.balls.length;
     const combinations = acc[length] || [];
     const hasRoom = combinations.length < MAX_COMBO_PER_SECTION;
@@ -120,27 +141,90 @@ const sectionCombinations = table => {
     return acc;
   }, {});
 
-  return Object.entries(keyValuePairs).reduce(
-    (acc, [key, combinations]) => [
+const createFrequencyGroups = combinations => {
+  const frequencyObj = combinations.reduce((acc, { frequency, balls }) => {
+    const matches = acc[frequency];
+
+    return {
       ...acc,
-      { title: `${TITLE_KEYS[key]} Combinations`, combinations }
-    ],
-    []
-  );
+      [frequency]: [...(matches || []), balls]
+    };
+  }, {});
+
+  return Object.entries(frequencyObj)
+    .reverse()
+    .map(([frequency, matches]) => ({
+      frequency: +frequency,
+      matches
+    }));
+};
+
+const createCombinations = sections => {
+  const items = Object.entries(sections);
+  const totalItems = items.length || 1;
+
+  return items.reduce(
+    (acc, [key, combinations], index) => {
+      postMessage({
+        progress: {
+          compareData: 100,
+          getFrequencies: 100,
+          createAssociations: 100,
+          createCombinations: (index + 1) / totalItems * 100
+        }
+      });
+
+      return [
+        ...acc,
+        {
+          title: `${TITLE_KEYS[key]} Combinations`,
+          total: +key,
+          combinations: createFrequencyGroups(combinations)
+        }
+      ]
+   }, []);
 };
 
 // We cannot pass in the master "getBallColor" function into the worker (as per
-// the spec). So in order to conform to the type interface for the "combination
+// the W3C spec). So in order to conform to the type interface for the "combination
 // data" we add in a generic  place holder that can be updated once we are back
 // on the main thread.
-const enrichWithColor = data =>
-  data.map(({ title, combinations }) => ({
-    title,
-    combinations: combinations.map(({ frequency, balls }) => ({
-      frequency,
-      balls: balls.map(ball => [ball, "blue"])
-    }))
+const enrichWithColor = combinations =>
+  combinations.map(({ frequency, balls }) => ({
+    frequency,
+    balls: balls.map(ball => [ball, "blue"])
   }));
+
+const createAssociation = (combination, [comparisons = [], ...columns]) => {
+  return comparisons.reduce((acc, comparison) => {
+    const whiteList = combination.balls.map(([ball]) => ball);
+    const match = comparison.balls.filter(([ball]) => whiteList.includes(ball));
+    const isMatch = Boolean(match.length === whiteList.length);
+
+    return isMatch
+      ? [...acc, comparison, ...createAssociation(comparison, columns)]
+      : acc;
+  }, []);
+};
+
+const createAssociations = items => {
+  const [combinations, ...comparisons] = Object.values(items);
+  const totalItems = combinations.length || 1;
+
+  return combinations.reduce((acc, combination, index) => {
+    postMessage({
+      progress: {
+        compareData: 100,
+        getFrequencies: 100,
+        createAssociations: (index + 1) / totalItems * 100
+      }
+    });
+    const association = createAssociation(combination, comparisons);
+    const hasAssociation = association.length;
+
+    return hasAssociation ? [...acc, [combination, ...association]] : acc;
+  }, []);
+};
 
 onmessage = function(event) {
   const prepped = prepareComboData(event.data);
@@ -149,12 +233,23 @@ onmessage = function(event) {
   const frequencies = getFrequency(matches);
   const flattened = flattenSequence(frequencies);
   const sorted = sortCombinations(flattened);
-  const sections = sectionCombinations(sorted);
-  const colors = enrichWithColor(sections);
+  const colors = enrichWithColor(sorted);
+  const sections = createSections(colors);
+  const associations = createAssociations(sections);
+  // console.log(
+  //   "associations",
+  //   JSON.stringify(associations.slice(0, 10), null, 2)
+  // );
+  const combinations = createCombinations(sections);
+  // console.log(
+  //   "combinations",
+  //   JSON.stringify(combinations.slice(0, 10), null, 2)
+  // );
 
   postMessage({
     isComplete: true,
-    combinations: colors
+    combinations,
+    associations
   });
 
   close();

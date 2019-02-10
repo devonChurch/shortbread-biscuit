@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.3/workbox-sw.js");
 
 importScripts(
-  "/shortbread-biscuit/precache-manifest.11b3a2756a57bdf324841e93d3a0e45b.js"
+  "/shortbread-biscuit/precache-manifest.c6849868150d932a9245eba59e418815.js"
 );
 
 workbox.clientsClaim();
