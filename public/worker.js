@@ -20,8 +20,6 @@ const TITLE_KEYS = {
 };
 
 const createRowComparison = () => {
-  // let progress = 0;
-  // let totalItems;
   const cache = [];
   const createCacheEntry = (indexA, indexB) =>
     `${Math.min(indexA, indexB)},${Math.max(indexA, indexB)}`;
@@ -32,11 +30,6 @@ const createRowComparison = () => {
 
   return (table, comparison, comboIndex) =>
     table.reduce((acc, row, rowIndex) => {
-      postMessage({
-        isComplete: false,
-        progress: comboIndex + 1
-      });
-
       if (checkIsInCache(comboIndex, rowIndex)) {
         return acc;
       } else {
@@ -52,12 +45,28 @@ const createRowComparison = () => {
 const compareTable = (table, compareRows) =>
   table.reduce((acc, row, index) => {
     const data = table.slice(index + 1);
+    const totalTableRows = table.length || 1;
+
+    postMessage({
+      progress: {
+        compareData: (index + 1) / totalTableRows * 100
+      }
+    });
 
     return [...acc, ...compareRows(data, row, index)];
   }, []);
 
-const getFrequency = matches =>
-  matches.reduce((acc, match) => {
+const getFrequency = matches => {
+  const totalMatches = matches.length || 1;
+  
+  return matches.reduce((acc, match, index) => {
+    postMessage({
+      progress: {
+        compareData: 100,
+        getFrequencies: (index + 1) / totalMatches * 100
+      }
+    });
+    
     const key = match.join(",");
     const hasKey = acc.hasOwnProperty(key);
 
@@ -71,7 +80,8 @@ const getFrequency = matches =>
     }
 
     return acc;
-  }, {});
+  }, {})
+};
 
 const flattenSequence = frequency =>
   Object.values(frequency).reduce(
@@ -149,18 +159,31 @@ const createFrequencyGroups = combinations => {
     }));
 };
 
-const createCombinations = items =>
-  Object.entries(items).reduce(
-    (acc, [key, combinations]) => [
-      ...acc,
-      {
-        title: `${TITLE_KEYS[key]} Combinations`,
-        total: +key,
-        combinations: createFrequencyGroups(combinations)
-      }
-    ],
-    []
-  );
+const createCombinations = sections => {
+  const items = Object.entries(sections);
+  const totalItems = items.length || 1;
+
+  return items.reduce(
+    (acc, [key, combinations], index) => {
+      postMessage({
+        progress: {
+          compareData: 100,
+          getFrequencies: 100,
+          createAssociations: 100,
+          createCombinations: (index + 1) / totalItems * 100
+        }
+      });
+
+      return [
+        ...acc,
+        {
+          title: `${TITLE_KEYS[key]} Combinations`,
+          total: +key,
+          combinations: createFrequencyGroups(combinations)
+        }
+      ]
+   }, []);
+};
 
 // We cannot pass in the master "getBallColor" function into the worker (as per
 // the W3C spec). So in order to conform to the type interface for the "combination
@@ -172,7 +195,7 @@ const enrichWithColor = combinations =>
     balls: balls.map(ball => [ball, "blue"])
   }));
 
-const createAssociation = (combination, [comparisons, ...columns]) => {
+const createAssociation = (combination, [comparisons = [], ...columns]) => {
   return comparisons.reduce((acc, comparison) => {
     const whiteList = combination.balls.map(([ball]) => ball);
     const match = comparison.balls.filter(([ball]) => whiteList.includes(ball));
@@ -186,8 +209,16 @@ const createAssociation = (combination, [comparisons, ...columns]) => {
 
 const createAssociations = items => {
   const [combinations, ...comparisons] = Object.values(items);
+  const totalItems = combinations.length || 1;
 
-  return combinations.reduce((acc, combination) => {
+  return combinations.reduce((acc, combination, index) => {
+    postMessage({
+      progress: {
+        compareData: 100,
+        getFrequencies: 100,
+        createAssociations: (index + 1) / totalItems * 100
+      }
+    });
     const association = createAssociation(combination, comparisons);
     const hasAssociation = association.length;
 

@@ -19,8 +19,8 @@ const Associations: SFC<IAssociations> = ({
     <BallsGroup total={7}>
       {associations.map((association, index) => (
         <BallsAssociation key={index}>
-          {association.map(({ balls, frequency }) => (
-            <Fragment key={balls.join(",")}>
+          {association.map(({ balls, frequency }, index) => (
+            <Fragment key={`${balls.join(",")}${index}`}>
               <Detail>x{frequency}</Detail>
               <div>
                 <BallsList>

@@ -1,5 +1,5 @@
 import React from "react";
-import { notification, Progress } from "antd";
+import { notification } from "antd";
 import axios from "axios";
 import csvToJson from "csvtojson";
 import throttle from "lodash.throttle";
@@ -15,6 +15,7 @@ import {
   IDrawData
 } from "./types";
 import { colors } from "./statics";
+import { CombinationsProgress } from "./Progress";
 
 export const fetchCsvData = () =>
   axios({
@@ -288,13 +289,13 @@ export const createDrawData = (table: ILottoDataJson[]): IDrawData[] => {
 };
 
 const updateCombinationsNotification = (
-  progress: number,
+  progress = {},
   duration: number = 0 // Seconds.
 ) => {
   notification.open({
     key: "combinationsWorker",
     message: "Calculating Lotto Ball Combinations",
-    description: <Progress percent={progress} status="active" />,
+    description: <CombinationsProgress {...progress} />,
     duration
   });
 };
@@ -302,7 +303,7 @@ const updateCombinationsNotification = (
 export const createCombinationsWorkerSequence = (
   rangeDataAll: ILottoDataJson[]
 ) => {
-  updateCombinationsNotification(0);
+  updateCombinationsNotification({});
   const worker = new Worker("worker.js");
   const throttled = throttle(updateCombinationsNotification, 500);
   const calculation = new Promise(resolve => {
@@ -310,7 +311,7 @@ export const createCombinationsWorkerSequence = (
       const { isComplete, combinations, associations, progress } = event.data;
       if (isComplete) {
         throttled.cancel();
-        updateCombinationsNotification(100, 0.1);
+        updateCombinationsNotification({}, 0.1);
         resolve({
           combinations: enrichCombinationsWithColor(combinations),
           associations: enrichAssociationsWithColor(associations)
