@@ -11,14 +11,14 @@ interface IBlobProps {
 
 const SkeletonBlob: SFC<IBlobProps> = ({ style, isInline }) => (
   <div
-    // className="ant-skeleton ant-skeleton-active"
+    className="ant-skeleton ant-skeleton-active"
     style={{ display: isInline ? "inline-block" : "block", width: "auto" }}
   >
     <span className="ant-skeleton-content" style={{ display: "block" }}>
       <span
         className="ant-skeleton-title"
         style={{
-          height: "20px",
+          height: "30px",
           margin: 0,
           display: "block",
           width: "100%",
@@ -51,12 +51,12 @@ export const SkeletonCard: SFC<ICardProps> = ({
   isTitleHidden = false
 }) => (
   <Card
-    title={!isTitleHidden && <SkeletonBlob style={{ maxWidth: "120px" }} />}
+    title={!isTitleHidden && <SkeletonBlob style={{ height: '20px', maxWidth: "120px" }} />}
   >
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
+        gridTemplateColumns: `repeat(auto-fill,minmax(${totalCells * 40 + (totalCells - 1) * 2}px, 1fr))`,
         gridRowGap: "40px"
       }}
     >
@@ -76,7 +76,7 @@ export const SkeletonCard: SFC<ICardProps> = ({
                   isInline
                   style={{
                     margin: "5px 5px 5px 0",
-                    width: "42px"
+                    width: "30px"
                   }}
                 />
               ))}
@@ -88,18 +88,18 @@ export const SkeletonCard: SFC<ICardProps> = ({
   </Card>
 );
 
-export const SkeletonBaseBalls: SFC<{}> = () => <SkeletonCard totalRows={40} />;
+export const SkeletonBaseBalls: SFC<{}> = () => <SkeletonCard totalRows={12} totalCells={5} />;
 
 export const SkeletonCombinations: SFC<{}> = () => (
-  <SkeletonCard totalRows={20} totalCells={4} />
+  <SkeletonCard totalColumns={10} totalRows={10} totalCells={4} />
 );
 
 export const SkeletonAssociations: SFC<{}> = () => (
-  <SkeletonCard totalColumns={4} totalRows={20} totalCells={4} isTitleHidden />
+  <SkeletonCard totalColumns={12} totalRows={20} totalCells={3} isTitleHidden />
 );
 
 export const SkeletonPowerBalls: SFC<{}> = () => (
-  <SkeletonCard totalRows={10} totalCells={4} />
+  <SkeletonCard totalRows={6} totalCells={4} />
 );
 
 export const SkeletonDraws: SFC<{}> = () => (
