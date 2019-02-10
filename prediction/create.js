@@ -10,13 +10,14 @@ const INPUT_DIR = path.resolve(DIR_NAME, "../", "public/lotto-numbers.csv");
 const MODEL_DIR = path.resolve(`${DIR_NAME}/model.js`);
 const PREDICTIONS_DIR = path.resolve(`${DIR_NAME}/predictions.json`);
 const OUTPUT_DIR = path.resolve(DIR_NAME, "../", `src/predictions.json`);
-const SIZE = 8;
+const BALLS = 7;
 const LAYERS = [50]; // [50];
-const ITTERATIONS = 20000; // 20000; // 10;
+const ITTERATIONS = 40000; // 20000; // 10;
+const DATA_SET = 100;
 
 console.log(
   "---- config ----",
-  { DIR_NAME, INPUT_DIR, MODEL_DIR, SIZE, LAYERS, ITTERATIONS },
+  { DIR_NAME, INPUT_DIR, MODEL_DIR, BALLS, LAYERS, ITTERATIONS },
   "---------------"
 );
 
@@ -153,8 +154,8 @@ console.log(
 
 const createNetwork = trainingData => {
   const network = new brain.recurrent.LSTMTimeStep({
-    inputSize: SIZE,
-    outputSize: SIZE,
+    inputSize: BALLS,
+    outputSize: BALLS,
     hiddenLayers: LAYERS
   });
 
@@ -189,7 +190,7 @@ const createTrainingData = async () => {
         5: position5, //             "35"
         6: position6, //             "10"
         "Bonus Ball": bonusBall1, // "5"
-        "Power Ball": powerBall //   "8"
+        // "Power Ball": powerBall //   "8"
       }) => [
         +position1,
         +position2,
@@ -198,11 +199,11 @@ const createTrainingData = async () => {
         +position5,
         +position6,
         +bonusBall1,
-        +powerBall
+        // +powerBall
       ]
     )
     .reverse()
-    .slice(-500);
+    .slice(-DATA_SET);
 };
 
 const makePredictions = (trainingData, network) => {

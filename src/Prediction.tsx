@@ -25,10 +25,10 @@ const Prediction: SFC<IProps> = ({ checkIsActive, handleToggle }) => (
   <Card>
     <BallsList>
       {balls.map(
-        ([ball, color]) =>
+        ([ball, color], index) =>
           Boolean(ball) && (
             <Ball
-              key={ball}
+              key={index} // Not the ball number encase numbers are duplicated.
               ball={ball}
               color={color}
               handleClick={handleToggle}
