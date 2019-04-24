@@ -4,8 +4,8 @@ self.__precacheManifest = [
     "url": "/shortbread-biscuit/static/js/runtime~main.80f8a5cf.js"
   },
   {
-    "revision": "f8dfb149de96363a2469",
-    "url": "/shortbread-biscuit/static/js/main.f8dfb149.chunk.js"
+    "revision": "cb559567ae51f1e93c58",
+    "url": "/shortbread-biscuit/static/js/main.cb559567.chunk.js"
   },
   {
     "revision": "7aed1ad82886805adda1",
@@ -16,7 +16,7 @@ self.__precacheManifest = [
     "url": "/shortbread-biscuit/static/css/1.4e6f3e8d.chunk.css"
   },
   {
-    "revision": "36290bd3ec89094813c56a3d56d04bcd",
+    "revision": "51ea8c1589cd9f10d60739064a837990",
     "url": "/shortbread-biscuit/index.html"
   }
 ];
