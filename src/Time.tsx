@@ -3,7 +3,7 @@ import moize from "moize";
 import moment from "moment";
 import { Card, DatePicker, Alert, Spin } from "antd";
 import { dateFormat } from "./statics";
-import { SkeletonInput } from ".//Skeleton";
+import { SkeletonInput } from "./Skeleton";
 
 interface ITime {
   absoluteOldestDate: number;
